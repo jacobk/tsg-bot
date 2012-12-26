@@ -1,0 +1,10 @@
+[
+    "redis-brain.coffee",
+    "tweet.coffee",
+    "shipit.coffee",
+    "spotify.coffee",
+    "twitter.coffee",
+    "uptime.coffee",
+    "tweet-content.coffee",
+    "heroku-status.coffee"
+]
