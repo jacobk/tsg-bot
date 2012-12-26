@@ -2,9 +2,29 @@
 
 ## Saker man måste ha
 
+### Pre-reqs
+
 1. Github konto + [git client](http://git-scm.com/), eller [github för windows](http://windows.github.com/) eller [github för mac](http://mac.github.com/).
 2. [Heroku konto + Heroku toolbelt](https://devcenter.heroku.com/articles/quickstart)
 3. Tillagd som collaborator på heroku-appen och på detta repot
+
+### Komma igång
+
+* Klona repot
+ 
+```shell
+$ cd <parent dir>
+$ git clone git@github.com:jacobk/tsg-bot.git
+```
+
+* Öppna `<parent dir>/tsg-bot/.git/config`
+* Lägg till:
+
+```git
+[remote "heroku"]
+ url = git@heroku.com:morning-bayou-3190.git
+ fetch = +refs/heads/*:refs/remotes/heroku/*
+```
 
 ## Köra lokalt
 
