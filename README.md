@@ -26,12 +26,6 @@ $ git clone git@github.com:jacobk/tsg-bot.git
  fetch = +refs/heads/*:refs/remotes/heroku/*
 ```
 
-## Köra lokalt
-
-För att kunna köra boten lokalt på datorn behövs [node.js](http://nodejs.org/) och [npm](https://npmjs.org/).
-
-Mer info finns på [hubot projektet](https://github.com/github/hubot#getting-your-own). Följer man instruktionerna under [Testing locally](Testing hubot locally) startar boten i ett interactiv shell (som i bash) där man kan testa scripten utan att behöva koppla upp den mot IRC osv.
-
 ## Lägga till script
 
 **1a. (Lägga till ett "officielt" script)**
@@ -63,3 +57,9 @@ $ git push heroku master
 $ git pull --rebase origin master # Behövs bara om nån annan ändrat nått
 $ git push origin master
 ```
+
+## Köra lokalt
+
+För att kunna köra boten lokalt på datorn behövs [node.js](http://nodejs.org/) och [npm](https://npmjs.org/).
+
+Mer info finns på [hubot projektet](https://github.com/github/hubot#getting-your-own). Följer man instruktionerna under [Testing locally](Testing hubot locally) startar boten i ett interactiv shell (som i bash) där man kan testa scripten utan att behöva koppla upp den mot IRC osv.
