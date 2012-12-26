@@ -1,3 +1,10 @@
+# Saker man måste ha
+
+1. Github konto + [git client](http://git-scm.com/), eller [github för windows](http://windows.github.com/) eller [github för mac](http://mac.github.com/).
+2. [Heroku konto + Heroku toolbelt](https://devcenter.heroku.com/articles/quickstart)
+3. Tillagd som collaborator på heroku-appen och på detta repot
+
+
 # Turning the knobs
 
 **1a. (Lägga till ett "officielt" script)**
