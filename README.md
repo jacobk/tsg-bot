@@ -13,7 +13,7 @@
   * Spara filen.
 
 **1b. (Lägga till ett custom script)**
-  * Spara scriptet (med .coffee ändelsen) i `scripts` katalogen. (*se till att filen har ett unikt namn, även bland de som är med i `hubot-scripts.json`.
+  * Spara scriptet (med .coffee ändelsen) i `scripts` katalogen. Se till att filen har ett unikt namn, även bland de som är med i `hubot-scripts.json`.
 
 **2. Spara & Deploya**
   * Comitta alla ändringar du gjort.
