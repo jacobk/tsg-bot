@@ -5,7 +5,7 @@
 3. Tillagd som collaborator på heroku-appen och på detta repot
 
 
-# Turning the knobs
+# Lägga till script
 
 **1a. (Lägga till ett "officielt" script)**
   * Hitta ett script i http://hubot-script-catalog.herokuapp.com/ (*eller direkt från https://github.com/github/hubot-scripts*)
