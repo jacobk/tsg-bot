@@ -2,7 +2,7 @@
 
 **1a. (Lägga till ett "officielt" script)**
   * Hitta ett script i http://hubot-script-catalog.herokuapp.com/ (*eller direkt från https://github.com/github/hubot-scripts*)
-  * Update `hubot-scripts.json` with the name of the script
+  * Uppdatera `hubot-scripts.json` med namnet på scriptet.
   * Spara filen.
 
 **1b. (Lägga till ett custom script)**
