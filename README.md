@@ -17,13 +17,10 @@ $ cd <parent dir>
 $ git clone git@github.com:jacobk/tsg-bot.git
 ```
 
-* Öppna `<parent dir>/tsg-bot/.git/config`
-* Lägg till:
+* Konfa så det går att deploya till Heroku
 
-```git
-[remote "heroku"]
- url = git@heroku.com:morning-bayou-3190.git
- fetch = +refs/heads/*:refs/remotes/heroku/*
+```shell
+$ git remote add heroku git@heroku.com:morning-bayou-3190.git
 ```
 
 ## Lägga till script
