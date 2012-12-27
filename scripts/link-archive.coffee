@@ -53,6 +53,9 @@ module.exports = (robot) ->
       msg.reply "OLD! #{firstNick} posted it #{new Date(parseInt(firstTime))}"
     robot.brain.save()
 
+  robot.respond /links$/i, (msg) ->
+    msg.send process.env.HEROKU_URL + "hubot/links"
+
   robot.router.get '/hubot/links', (req, res) ->
     res.setHeader 'content-type', 'text/html'
     nicks = {}
