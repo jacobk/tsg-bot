@@ -2,7 +2,7 @@
 #   None
 #
 # Dependencies:
-#   "redis": "0.7.2"
+#   None
 #
 # Configuration:
 #   PARSE_APP_ID
