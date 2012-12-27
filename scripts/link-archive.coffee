@@ -115,7 +115,7 @@ pageContent = (links, nicks) ->
         <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
         <style>
           body {
-            padding-top: 60px;
+            margin-top: 20px;
           }
           .label {
             margin-right: 3px;
@@ -127,26 +127,14 @@ pageContent = (links, nicks) ->
         </style>
     </head>
     <body>
-        <div class="navbar navbar-fixed-top">
-          <div class="navbar-inner">
-            <div class="container">
-              <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-              </a>
-              <a class="brand" href="#">TSG LINKS</a>
-              <div class="nav-collapse collapse">
-                <ul class="nav">
-                  <li class="active"><a href="#">Home</a></li>
-                </ul>
-              </div>
-            </div>
+        <div class="container">
+          <div class="row">
+            <div id="search-filters" class="span6"></div>
+            <div id="nick-filters" class="span6"></div>
           </div>
-        </div>
-        <div id="content" class="container">
-
-
+          <div class="row">
+            <div id="content" class="span12"></div>
+          </div>
         </div>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.3/underscore-min.js"></script>
@@ -154,7 +142,6 @@ pageContent = (links, nicks) ->
         <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
 
         <script type="text/template" id="table-tmpl">
-          <h3>Links</h3>
           <table class="table table-striped">
             <thead>
               <tr>
@@ -196,8 +183,14 @@ pageContent = (links, nicks) ->
         </script>
 
         <script type="text/template" id="filters-tmpl">
-          <h3>Filters</h3>
-          <div class="filters"><span class="label all">ALL</span><span class="label none">NONE</span></div>
+          <div class="filters"><span class="label all">ALL</span><span class="label none">NONE</span><i class=" icon-chevron-right">
+            </i></div>
+        </script>
+
+        <script type="text/template" id="search-filters-tmpl">
+          <form class="form-search">
+            <input type="text" class="span6 search-query" placeholder="Sök länk">
+          </form>
         </script>
 
 
@@ -205,6 +198,12 @@ pageContent = (links, nicks) ->
           var Nick = Backbone.Model.extend({
             defaults: {
               selected: true
+            }
+          });
+
+          var SearchQuery = Backbone.Model.extend({
+            defaults: {
+              query: ""
             }
           });
 
@@ -273,6 +272,28 @@ pageContent = (links, nicks) ->
             toggleNick: function(e) {
               this.model.collection.toggleNick(this.model);
             }
+          });
+
+          var SearchFilter = Backbone.View.extend({
+            template: _.template($("#search-filters-tmpl").html()),
+
+            events: {
+              "keyup .search-query": "searchChanged"
+            },
+
+            initialize: function() {
+              _.bindAll(this, "render", "searchChanged");
+            },
+
+            render: function() {
+              this.$el.html(this.template());
+              return this;
+            },
+
+            searchChanged: _.throttle(function(e) {
+              var val = $(e.currentTarget).val();
+              this.model.set("query", val);
+            }, 500)
           });
 
           var DetailsView = Backbone.View.extend({
@@ -369,7 +390,9 @@ pageContent = (links, nicks) ->
             initialize: function() {
               _.bindAll(this, "render");
               this.nicks = this.options.nicks;
+              this.query = this.options.query;
               this.nicks.on("selected", this.render)
+              this.query.on("change:query", this.render)
             },
 
             render: function() {
@@ -388,18 +411,32 @@ pageContent = (links, nicks) ->
 
             shouldDisplay: function(link) {
               var selectedNicks = this.nicks.where({selected: true});
+
               var hasNickMatch = _.any(selectedNicks, function(nick) {
                 return _.any(link.get("posters"), function(poster) {
                   return nick.get("nick") === poster[0];
                 }, this);
               }, this);
-              return hasNickMatch;
+
+              if (!hasNickMatch) return false;
+
+              var isMatchingQuery = false;
+              var query = this.query.get("query");
+              if (/^\s*$/.test(query)) {
+                isMatchingQuery = true;
+              } else {
+                var queryPattern = new RegExp(query.split("").join(".*"));
+                isMatchingQuery = queryPattern.test(link.get("url"));
+              }
+
+              return isMatchingQuery;
             }
           });
 
           $(function() {
             var links = new Links();
             var nicks = new Nicks();
+            var query = new SearchQuery();
 
             links.comparator = function(model1, model2) {
               var a, b;
@@ -414,14 +451,20 @@ pageContent = (links, nicks) ->
             var filterView = new FilterView({
               collection: nicks
             });
+            var searchFilterView = new SearchFilter({
+              model: query
+            });
             var linksView = new LinksView({
               collection: links,
-              nicks: nicks
+              nicks: nicks,
+              query: query
             });
 
 
-            $("#content").append(filterView.render().el);
+            $("#nick-filters").append(filterView.render().el);
+            $("#search-filters").append(searchFilterView.render().el);
             $("#content").append(linksView.render().el);
+            $(".search-query").focus();
           });
         </script>
     </body>
