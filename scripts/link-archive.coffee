@@ -135,6 +135,7 @@ pageContent = (links, nicks) ->
         <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.3/underscore-min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.9/backbone-min.js"></script>
         <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/1.7.2/moment.min.js"></script>
 
         <script type="text/template" id="table-tmpl">
           <table class="table table-striped">
@@ -156,7 +157,9 @@ pageContent = (links, nicks) ->
           <td><a href="<%= url %>"><%= url %></a></td>
           <td><%= posters[0][0] %></td>
           <td><%= posters.length %></td>
-          <td><%= new Date(parseInt(posters[0][1])).toLocaleString() %></td>
+          <td>
+            <a href="#" class="post-date" rel="tooltip" title="<%= moment(new Date(parseInt(posters[0][1]))).format("YYYY-MM-DD HH:mm") %>"><%= moment(new Date(parseInt(posters[0][1]))).fromNow() %></a>
+          </td>
           <td><a href="#" class="more">more</a></td>
         </script>
 
@@ -315,7 +318,7 @@ pageContent = (links, nicks) ->
             tagName: "tr",
 
             initialize: function() {
-              _.bindAll(this, "showDetails")
+              _.bindAll(this, "showDetails");
             },
 
             events: {
@@ -324,6 +327,7 @@ pageContent = (links, nicks) ->
 
             render: function() {
               this.$el.html(this.template(this.model.toJSON()));
+              this.$(".post-date").tooltip();
               return this;
             },
 
