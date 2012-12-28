@@ -188,7 +188,7 @@ pageContent = (links, nicks) ->
         </script>
 
         <script type="text/template" id="search-filters-tmpl">
-          <input type="text" class="span12 search-query" placeholder="Sök länk">
+          <input type="text" class="span12 filter-query" placeholder="Sök länk">
         </script>
 
 
@@ -276,7 +276,7 @@ pageContent = (links, nicks) ->
             template: _.template($("#search-filters-tmpl").html()),
 
             events: {
-              "keyup .search-query": "searchChanged"
+              "keyup .filter-query": "searchChanged"
             },
 
             initialize: function() {
@@ -462,7 +462,7 @@ pageContent = (links, nicks) ->
             $("#nick-filters").append(filterView.render().el);
             $("#search-filters").append(searchFilterView.render().el);
             $("#content").append(linksView.render().el);
-            $(".search-query").focus();
+            $(".filter-query").focus();
           });
         </script>
     </body>
