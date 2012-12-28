@@ -4,18 +4,73 @@
 
 ### Pre-reqs
 
+#### Utvecklings miljö
+
 1. Github konto + [git client](http://git-scm.com/), eller [github för windows](http://windows.github.com/) eller [github för mac](http://mac.github.com/).
-2. [Heroku konto + Heroku toolbelt](https://devcenter.heroku.com/articles/quickstart)
+
+
+#### Deployment
+
+1. [Heroku konto + Heroku toolbelt](https://devcenter.heroku.com/articles/quickstart)
 3. Tillagd som collaborator på heroku-appen och på detta repot
 
 ### Komma igång
 
+* Installera node.js och npm
 * Klona repot
  
 ```shell
 $ cd <parent dir>
 $ git clone git@github.com:jacobk/tsg-bot.git
 ```
+
+* Installera lokalt (installerar inget utanför den utcheckade mappen)
+
+```shell
+$ cd tsg-bot
+$ npm install    # Körs även automatikst om man försöker starta boten
+```
+
+* Starta boten. Den startas med Shell-adaptern direkt i terminalen så man kan prata med den utan att klydda med IRC osv.
+
+```shell
+$ bin/hubot
+```
+
+* Konfigurera botten (om det behövs). Boten konfas via environment variabler.
+
+```shell
+$ export PORT=8080 # Default port, ändra om du kör nått annat på 8080
+$ export HUBOT_LOG_LEVEL=info # Ändra till debug om du vill se mer logging
+
+# För att kunna använda botens "brain" (persistent storage) behövs följande
+$ export PARSE_APP_ID=<LOGGA IN O KOLLA PÅ PARSE.COM>
+$ export PARSE_API_KEY=<LOGGA IN O KOLLA PÅ PARSE.COM>
+$ export PARSE_BRAIN=<ID PÅ ETT OBJECT DU SKAPAT I PARSE, SE NEDAN>
+```
+
+#### Skapa en parse brain
+
+Det görs lättast med curl. Men fiddler osv. funkar också.
+
+Credentials till vårt Parse.com konto hittas i [detta google doc](https://docs.google.com/document/d/1QNyat-n3vl6ulFGGfRMAH3o7v9F7pB8AQFdq4roUvXk/edit)
+
+Det går att inspektera Parse.com-datan i [data browsern](https://parse.com/apps/tsg--2/collections#class/brains/p0).
+
+```shell
+$ curl -X POST \
+    -H "X-Parse-Application-Id: <LOGGA IN O KOLLA PÅ PARSE.COM>" \
+    -H "X-Parse-REST-API-Key: <LOGGA IN O KOLLA PÅ PARSE.COM>" \
+    -H "Content-Type: application/json" \
+    -d '{"tester": "<ÄNDRA TILL DITT NICK<"}' \
+    https://api.parse.com/1/classes/brains
+```
+
+
+
+
+### Komma igång med deployment
+
 
 * Konfa så det går att deploya till Heroku
 
