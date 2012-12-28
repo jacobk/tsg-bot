@@ -115,22 +115,17 @@ pageContent = (links, nicks) ->
         <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
         <style>
           body {
-            margin-top: 20px;
-          }
-          .label {
-            margin-right: 3px;
-          }
-          .label:hover {
-            cursor: pointer;
-            opacity: 0.5;
+            margin-top: 25px;
           }
         </style>
     </head>
     <body>
         <div class="container">
           <div class="row">
-            <div id="search-filters" class="span6"></div>
-            <div id="nick-filters" class="span6"></div>
+            <div id="search-filters" class="span12"></div>
+          </div>
+          <div class="row">
+            <div id="nick-filters" class="span12"></div>
           </div>
           <div class="row">
             <div id="content" class="span12"></div>
@@ -183,14 +178,17 @@ pageContent = (links, nicks) ->
         </script>
 
         <script type="text/template" id="filters-tmpl">
-          <div class="filters"><span class="label all">ALL</span><span class="label none">NONE</span><i class=" icon-chevron-right">
-            </i></div>
+          <div class="filters">
+            <div class="btn-toolbar">
+              <div class="btn-group">
+                <button class="btn all">ALL</button><button class="btn none">NONE</button>
+              </div>
+            </div>
+          </div>
         </script>
 
         <script type="text/template" id="search-filters-tmpl">
-          <form class="form-search">
-            <input type="text" class="span6 search-query" placeholder="Sök länk">
-          </form>
+          <input type="text" class="span12 search-query" placeholder="Sök länk">
         </script>
 
 
@@ -246,9 +244,9 @@ pageContent = (links, nicks) ->
           });
 
           var NickSelector = Backbone.View.extend({
-            tagName: "span",
+            tagName: "button",
 
-            className: "label",
+            className: "btn",
 
             events: {
               "click": "toggleNick"
@@ -262,9 +260,9 @@ pageContent = (links, nicks) ->
             render: function() {
               this.$el.html(this.model.get("nick"));
               if (this.model.get("selected")) {
-                this.$el.addClass("label-info");
+                this.$el.addClass("btn-info");
               } else {
-                this.$el.removeClass("label-info");
+                this.$el.removeClass("btn-info");
               }
               return this;
             },
@@ -356,7 +354,7 @@ pageContent = (links, nicks) ->
                 var itemView = new NickSelector({
                   model: link
                 });
-                this.$(".filters").append(itemView.render().el);
+                this.$(".btn-toolbar").append(itemView.render().el);
               }, this);
               this.onSelected();
               return this;
@@ -372,14 +370,14 @@ pageContent = (links, nicks) ->
 
             onSelected: function() {
               if (this.collection.isAllSelected()) {
-                this.$(".all").addClass("label-warning");
+                this.$(".all").addClass("btn-warning");
               } else {
-                this.$(".all").removeClass("label-warning");
+                this.$(".all").removeClass("btn-warning");
               }
               if (this.collection.isNoneSelected()) {
-                this.$(".none").addClass("label-warning");
+                this.$(".none").addClass("btn-warning");
               } else {
-                this.$(".none").removeClass("label-warning");
+                this.$(".none").removeClass("btn-warning");
               }
             }
           });
