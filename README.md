@@ -20,7 +20,7 @@ $ git clone git@github.com:jacobk/tsg-bot.git
 * Konfa så det går att deploya till Heroku
 
 ```shell
-$ git remote add heroku git@heroku.com:morning-bayou-3190.git
+$ git remote add heroku git@heroku.com:tsg.git
 ```
 
 ## Lägga till script
