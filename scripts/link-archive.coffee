@@ -142,8 +142,9 @@ pageContent = (links, nicks) ->
               <tr>
                 <th>URL</th>
                 <th>OP</th>
-                <th>Tid</th>
-                <th>Detaljer</th>
+                <th>#</th>
+                <th>FIRST</th>
+                <th>DETAILS</th>
               </tr>
             </thead>
             <tbody>
@@ -154,6 +155,7 @@ pageContent = (links, nicks) ->
         <script type="text/template" id="table-row-tmpl">
           <td><a href="<%= url %>"><%= url %></a></td>
           <td><%= posters[0][0] %></td>
+          <td><%= posters.length %></td>
           <td><%= new Date(parseInt(posters[0][1])).toLocaleString() %></td>
           <td><a href="#" class="more">more</a></td>
         </script>
