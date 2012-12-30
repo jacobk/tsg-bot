@@ -143,6 +143,11 @@ pageContent = (links, posters) ->
             line-height: 34px;
             ver
           }
+          .link-table {
+              table-layout: fixed;
+              word-wrap: break-word;
+              word-break: break-all;
+          }
         </style>
     </head>
     <body>
@@ -164,15 +169,15 @@ pageContent = (links, posters) ->
         <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/1.7.2/moment.min.js"></script>
 
         <script type="text/template" id="table-tmpl">
-          <table class="table table-striped">
+          <table class="link-table table table-striped">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>URL</th>
-                <th>OP</th>
-                <th>#</th>
-                <th>FIRST</th>
-                <th>DETAILS</th>
+                <th width="5%">ID</th>
+                <th width="65%">URL</th>
+                <th width="10%">OP</th>
+                <th width="5%">#</th>
+                <th width="15%">FIRST</th>
+                <th width="5%"><i class="icon-info-sign"></i></th>
               </tr>
             </thead>
             <tbody>
