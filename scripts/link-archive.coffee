@@ -468,7 +468,7 @@ pageContent = (links, posters) ->
               if (/^\s*$/.test(query)) {
                 isMatchingQuery = true;
               } else {
-                var queryPattern = new RegExp(query.split("").join(".*"));
+                var queryPattern = new RegExp(query.split("").join(".*"), "i");
                 isMatchingQuery = queryPattern.test(link.get("url"));
               }
 
