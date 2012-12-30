@@ -24,51 +24,54 @@
 
 Crypto = require "crypto"
 
-version = "1"
+version = "2"
 
 module.exports = (robot) ->
 
-  # wait for brain to load, merging doesn't work
   robot.brain.on "loaded", ->
-    robot.brain.data.links ?= {}
-    unless robot.brain.data.links.version is version
-      console.log "Migrating to #{version}"
-      robot.brain.data.links.version = version
-      robot.brain.save()
+    robot.brain.data.links ?=
+      version: version
+      index: 0
+      db: {}
+      posters: {}
+    brain_version = robot.brain.data.links.version
+    if brain_version isnt version
+      throw "Wrong link-archive version want: #{version} got: #{brain_version}"
 
-  robot.hear link.pattern, (msg) ->
-    url  = link.normalize msg.match[1]
-    nick = msg.message.user.name
-
-    post = [nick, new Date().getTime().toString()]
-
-    hash = link.md5hash url
+  robot.hear util.pattern, (msg) ->
     links = robot.brain.data.links
+    url   = util.normalize msg.match[1]
+    nick  = msg.message.user.name
+    link  = links.db[util.md5hash url] ?=
+      id: ++links.index
+      url: url
+      posters: []
+    post  =
+      nick: nick
+      ts: new Date().getTime()
 
-    posts = links[hash] ?= {url: url, posters: []}
-    posts.posters.push post
-    [firstNick, firstTime] = posts.posters[0]
+    link.posters.push post
+    links.posters[nick] = (links.posters[nick] ? 0) + 1
+    op = link.posters[0]
 
-    if firstNick and firstNick isnt nick
-      msg.reply "OLD! #{firstNick} posted it #{new Date(parseInt(firstTime))}"
+    if op.nick isnt nick
+      msg.reply "OLD! #{op.nick} posted it #{new Date(firstTime)}"
     robot.brain.save()
 
   robot.respond /links$/i, (msg) ->
     msg.send process.env.HEROKU_URL + "hubot/links"
 
   robot.router.get '/hubot/links', (req, res) ->
-    res.setHeader 'content-type', 'text/html'
-    nicks = {}
-    links = for hash, link of robot.brain.data.links when hash isnt "version"
-      for poster in link.posters
-        nicks[poster[0]] = true
+    links = for hash, link of robot.brain.data.links.db
       link
-    nicks = for nick, foo of nicks
+    posters = for nick, count of robot.brain.data.links.posters
       nick: nick
-    res.end pageContent(JSON.stringify(links), JSON.stringify(nicks))
+      count: count
+    res.setHeader 'Content-Type', 'text/html'
+    res.end pageContent(JSON.stringify(links), JSON.stringify(posters))
 
 
-link =
+util =
   md5hash: (data) ->
     md5sum = Crypto.createHash('md5');
     md5sum.update(new Buffer(data))
@@ -106,7 +109,7 @@ link =
     "#{scheme}://#{authority}#{path}#{query or ""}#{fragment or ""}"
 
 
-pageContent = (links, nicks) ->
+pageContent = (links, posters) ->
   """
 <!DOCTYPE html>
     <head>
@@ -141,6 +144,7 @@ pageContent = (links, nicks) ->
           <table class="table table-striped">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>URL</th>
                 <th>OP</th>
                 <th>#</th>
@@ -154,11 +158,12 @@ pageContent = (links, nicks) ->
         </script>
 
         <script type="text/template" id="table-row-tmpl">
+          <td><a href="#" class="more"><%= id %></a></td>
           <td><a href="<%= url %>"><%= url %></a></td>
-          <td><%= posters[0][0] %></td>
+          <td><%= posters[0].nick %></td>
           <td><%= posters.length %></td>
           <td>
-            <a href="#" class="post-date" rel="tooltip" title="<%= moment(new Date(parseInt(posters[0][1]))).format("YYYY-MM-DD HH:mm") %>"><%= moment(new Date(parseInt(posters[0][1]))).fromNow() %></a>
+            <a href="#" class="post-date" rel="tooltip" title="<%= moment(new Date(posters[0].ts)).format("YYYY-MM-DD HH:mm") %>"><%= moment(new Date(posters[0].ts)).fromNow() %></a>
           </td>
           <td><a href="#" class="more">more</a></td>
         </script>
@@ -175,7 +180,7 @@ pageContent = (links, nicks) ->
               <h4>Posts</h4>
               <ul>
                 <% _.each(posters, function(poster) { %>
-                  <li><%= poster[0] %> - <%= new Date(parseInt(poster[1])).toLocaleString() %></li>
+                  <li><%= poster.nick %> - <%= moment(new Date(poster.ts)).format("YYYY-MM-DD HH:mm") %></li>
                 <% }); %>
               </ul>
             </div>
@@ -401,9 +406,8 @@ pageContent = (links, nicks) ->
 
             render: function() {
               this.$el.html(this.template());
-              this.collection.each(function(link, index) {
+              this.collection.each(function(link) {
                 if (this.shouldDisplay(link)) {
-                  link.set({index: index + 1});
                   var itemView = new LinkView({
                     model: link
                   });
@@ -418,7 +422,7 @@ pageContent = (links, nicks) ->
 
               var hasNickMatch = _.any(selectedNicks, function(nick) {
                 return _.any(link.get("posters"), function(poster) {
-                  return nick.get("nick") === poster[0];
+                  return nick.get("nick") === poster.nick;
                 }, this);
               }, this);
 
@@ -444,13 +448,13 @@ pageContent = (links, nicks) ->
 
             links.comparator = function(model1, model2) {
               var a, b;
-              a = model1.get("posters")[0][1];
-              b = model2.get("posters")[0][1];
+              a = model1.get("id");
+              b = model2.get("id");
               return a === b ? 0 : a < b ? 1 : -1;
             };
 
             links.reset(#{links});
-            nicks.reset(#{nicks});
+            nicks.reset(#{posters});
 
             var filterView = new FilterView({
               collection: nicks
