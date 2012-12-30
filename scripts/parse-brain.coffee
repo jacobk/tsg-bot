@@ -46,8 +46,13 @@ class Parse
       @robot.brain.mergeData JSON.parse(body)
 
   save: (data) =>
-    @client.put(JSON.stringify(data)) (err, resp, body) =>
-      throw "Failed to save to Parse.com" unless resp.statusCode is 200
+    json_data = JSON.stringify(data)
+    @client.scope()
+      # Manually set content length and using streaming body handler
+      # to deal with scoped-client's inability to send multi byte unicode
+      .header("Content-Length", Buffer.byteLength(json_data))
+      .put((err, req) -> req.end json_data) (err, resp, body) =>
+          throw "Failed to save to Parse.com" unless resp.statusCode is 200    
 
   buildClient: ->
     @client = @robot.http(@brainUrl())
