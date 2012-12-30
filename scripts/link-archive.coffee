@@ -57,7 +57,7 @@ module.exports = (robot) ->
     op = link.posters[0]
 
     if op.nick isnt nick
-      msg.reply "#{op.nick} post the same link #{moment(new Date(op.ts)).fromNow()}"
+      msg.reply "#{op.nick} posted the same link #{moment(new Date(op.ts)).fromNow()}"
     robot.brain.save()
 
   robot.respond /links$/i, (msg) ->
