@@ -2,7 +2,7 @@
 #   Keep track of links
 #
 # Dependencies:
-#   None
+#   "moment": "~1.7.2"
 #
 # Configuration:
 #   None
@@ -24,6 +24,7 @@
 # * Test if a link has been posted before
 
 Crypto = require "crypto"
+moment = require "moment"
 
 version = "2"
 
@@ -56,7 +57,7 @@ module.exports = (robot) ->
     op = link.posters[0]
 
     if op.nick isnt nick
-      msg.reply "OLD! #{op.nick} posted it #{new Date(firstTime)}"
+      msg.reply "#{op.nick} post the same link #{moment(new Date(op.ts)).fromNow()}"
     robot.brain.save()
 
   robot.respond /links$/i, (msg) ->
