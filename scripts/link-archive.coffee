@@ -132,6 +132,17 @@ pageContent = (links, posters) ->
           body {
             margin-top: 25px;
           }
+          .btn-toolbar > .btn-group, .btn-toolbar > .btn + .btn, .btn-toolbar > .btn-group + .btn, .btn-toolbar > .btn + .btn-group {
+            margin-left: 0px;
+            margin-right: 5px;
+          }
+          .btn-toolbar > .btn-group {
+            vertical-align: baseline;
+          }
+          .btn-toolbar {
+            line-height: 34px;
+            ver
+          }
         </style>
     </head>
     <body>
@@ -213,6 +224,10 @@ pageContent = (links, posters) ->
           <input type="text" class="span12 filter-query" placeholder="Sök länk">
         </script>
 
+        <script type="text/template" id="nick-button-tmpl">
+          <span class="label label-inverse"> <%= count %></span> <%= nick %>
+        </script>
+
 
         <script>
           var Nick = Backbone.Model.extend({
@@ -266,6 +281,8 @@ pageContent = (links, posters) ->
           });
 
           var NickSelector = Backbone.View.extend({
+            template: _.template($("#nick-button-tmpl").html()),
+
             tagName: "button",
 
             className: "btn",
@@ -280,11 +297,12 @@ pageContent = (links, posters) ->
             },
 
             render: function() {
-              this.$el.html(this.model.get("nick"));
+              this.$el.html(this.template(this.model.toJSON()));
               if (this.model.get("selected")) {
                 this.$el.addClass("btn-info");
               } else {
                 this.$el.removeClass("btn-info");
+                this.$(".label").removeClass("label-inverse");
               }
               return this;
             },
