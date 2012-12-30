@@ -8,7 +8,8 @@
 #   None
 #
 # Commands:
-#   None
+#   hubot link me <link id> - Posts link with that id from the link archive
+#   hubot links - Provides a link to the links archive page
 #
 # Author:
 #   jacobk
@@ -60,6 +61,17 @@ module.exports = (robot) ->
 
   robot.respond /links$/i, (msg) ->
     msg.send process.env.HEROKU_URL + "hubot/links"
+
+  robot.respond /(link|url)( me)? (\d+)/i, (msg) ->
+    db = robot.brain.data.links.db
+    id = parseInt msg.match[3], 10
+    links = for hash, link of db when link.id is id
+      link
+    link = links.pop()
+    if link
+      msg.send "op: #{link.posters[0].nick} url: #{link.url}"
+    else
+      msg.reply "Sorry, no link with that id"
 
   robot.router.get '/hubot/links', (req, res) ->
     links = for hash, link of robot.brain.data.links.db
