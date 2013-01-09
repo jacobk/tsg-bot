@@ -1,7 +1,6 @@
 [
     "tweet.coffee",
     "shipit.coffee",
-    "spotify.coffee",
     "twitter.coffee",
     "uptime.coffee",
     "tweet-content.coffee",

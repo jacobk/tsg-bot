@@ -76,7 +76,7 @@ class LastFm
       ((result) ->
         listeners = (user for user in result when user.count > 0)
         if listeners.length > 0
-          listeners = ("#{user.user}a(#{user.count})" for user in listeners)
+          listeners = ("#{user.user}(#{user.count})" for user in listeners)
           msg.send "Listeners: #{listeners.join(", ")}"
       ),
       ((err) ->
