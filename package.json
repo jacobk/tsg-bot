@@ -19,7 +19,8 @@
     "hubot-scripts": ">= 2.1.0",
     "optparse": "1.0.3",
     "hubot-irc": "~0.1.4",
-    "moment": "~1.7.2"
+    "moment": "~1.7.2",
+    "deferred": "~0.6.1"
   },
   "engines": {
     "node": "0.6.x",
