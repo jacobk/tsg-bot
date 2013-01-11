@@ -27,8 +27,9 @@ module.exports = (robot) ->
       if res.statusCode is 200
         data = JSON.parse(body)
         msg.send spotify[data.info.type](data)
-        if data.info.type is "track"
-          last_fm.getPlayCounts msg, data
+        type = data.info.type
+        if type in ["track", "album"]
+          last_fm.getPlayCounts type, msg, data
 
 spotify =
   link: /// (
@@ -67,11 +68,18 @@ class LastFm
     @getGroupMembers groups.split(/\s*,\s*/), (members) =>
       @users = members
 
-  getPlayCounts: (msg, data) ->
-    artist = data.track.artists[0].name
-    track  = data.track.name
+  getPlayCounts: (type, msg, data) ->
+    options = method: "#{type}.getInfo"
+
+    if type is "track"
+      options.artist = data.track.artists[0].name
+      options.track  = data.track.name
+    else if type is "album"
+      options.artist = data.album.artist
+      options.album  = data.album.name
+
     counts = deferred.map @users, (user) =>
-      @getPlayCount(artist, track, user)
+      @getPlayCount(type, options, user)
     counts.then(
       ((result) ->
         listeners = (user for user in result when user.count > 0)
@@ -84,20 +92,15 @@ class LastFm
       )
     )
 
-
-  getPlayCount: (artist, track, user) ->
+  getPlayCount: (type, options, user) ->
     def = deferred()
-    options =
-      method: "track.getInfo"
-      artist: artist
-      track: track
-      username: user
-
+    options.username = user
     @client.scope().query(options).get() (err, resp, body) =>
       data = JSON.parse body
       unless data.error
-        def.resolve {user: user, count: data.track.userplaycount}
+        def.resolve {user: user, count: data[type].userplaycount}
       else
+        console.log "Last.fm failure", body
         def.resolve new Error("Failed to get playcount")
 
     def.promise
