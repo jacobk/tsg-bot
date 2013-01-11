@@ -31,6 +31,29 @@ module.exports = (robot) ->
         if type in ["track", "album", "artist"]
           last_fm.getPlayCounts type, msg, data
 
+  robot.respond /lastfm alias (\S+) (\S+)/i, (msg) ->
+    lastfm      = robot.brain.data.lastfm ?= {}
+    lastfm_name = msg.match[1]
+    alias       = msg.match[2]
+
+    lastfm[lastfm_name] = alias
+    msg.reply "#{lastfm_name} will henceforth be known as #{alias}. " +
+              "Remove alias with 'lastfm clear <last.fm-user>'"
+
+  robot.respond /lastfm clear (\S+)/i, (msg) ->
+    lastfm      = robot.brain.data.lastfm ?= {}
+    lastfm_name = msg.match[1]
+    if lastfm_name of lastfm
+      delete lastfm[lastfm_name]
+      msg.reply "Alias removed for #{lastfm_name}"
+    else
+      msg.reply "No alias for #{lastfm_name}. Try 'lastfm alias <last.fm-user>'"
+
+  robot.respond /lastfm list/i, (msg) ->
+    aliases = ("#{u}->#{a}" for u, a of robot.brain.data.lastfm ?= {})
+    msg.reply "Last.fm aliases: #{aliases.join ', '}"
+
+
 spotify =
   link: /// (
     ?: http://open.spotify.com/(track|album|artist)/
@@ -50,10 +73,6 @@ spotify =
   artist: (data) ->
     "Artist: #{data.artist.name}"
 
-lastfm =
-  track: (data) ->
-    artist = data.track.artists[0].name
-    track  = data.track.name
 
 
 
@@ -83,10 +102,10 @@ class LastFm
     counts = deferred.map @users, (user) =>
       @getPlayCount(type, options, user)
     counts.then(
-      ((result) ->
+      ((result) =>
         listeners = (user for user in result when user.count > 0)
         if listeners.length > 0
-          listeners = ("#{user.user}(#{user.count})" for user in listeners)
+          listeners = ("#{@getAlias user.user}(#{user.count})" for user in listeners)
           msg.send "Listeners: #{listeners.join(", ")}"
       ),
       ((err) ->
@@ -123,6 +142,8 @@ class LastFm
           members[user.name] = true
         callback(key for key, foo of members)
 
+  getAlias: (user) ->
+    @robot.brain.data.lastfm[user] ? user
 
   buildClient: ->
     options =
