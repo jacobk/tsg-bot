@@ -8,6 +8,9 @@
 #   None
 #
 # Commands:
+#   lastfm alias <lastfm username> <alias> - Creates and alias to beused in place of real nick
+#   lastfm clear <lastfm username> - Removes alias
+#   lastfm list - List all established aliases
 #   <spotify link> - returns info about the link (track, artist, etc.)
 #
 # Author:
