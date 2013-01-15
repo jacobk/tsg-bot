@@ -3,6 +3,8 @@
 # <url> - returns info about the link
 #
 
+_ = require "underscore"
+
 module.exports = (robot) ->
 
   reddit = new Reddit robot
@@ -33,7 +35,7 @@ class Reddit
     lookup: (url, msg) ->
       options =
         url: url
-        limit: 1
+        limit: 50
 
       @robot.http(Reddit.SEARCH_API)
         .query(options)
@@ -42,6 +44,7 @@ class Reddit
         .get() (err, resp, body) ->
           body = JSON.parse body
           if body?.data?.children.length
-            item_data = body.data.children[0].data
-            msg.send "Reddit: #{item_data.title} (/r/#{item_data.subreddit})"
+            highest_score = _.max body.data.children, (item) ->
+              item.data.score
+            msg.send "Reddit: #{highest_score.data.title} (/r/#{highest_score.data.subreddit}, score: #{highest_score.data.score})"
 
