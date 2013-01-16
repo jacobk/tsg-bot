@@ -11,12 +11,15 @@
 #   lastfm alias <lastfm username> <alias> - Creates and alias to beused in place of real nick
 #   lastfm clear <lastfm username> - Removes alias
 #   lastfm list - List all established aliases
+#   lastfm last <lastfm user> - List all established aliases
 #   <spotify link> - returns info about the link (track, artist, etc.)
 #
 # Author:
 #   jacobk
 
 deferred = require "deferred"
+_ = require "underscore"
+moment = require "moment"
 
 lastfm_key    = process.env.LAST_FM_KEY
 lastfm_groups = process.env.LAST_FM_GROUPS || "tsg"
@@ -41,7 +44,7 @@ module.exports = (robot) ->
 
     lastfm[lastfm_name] = alias
     msg.reply "#{lastfm_name} will henceforth be known as #{alias}. " +
-              "Remove alias with 'lastfm clear <last.fm-user>'"
+              "Remove alias with 'lastfm clear #{alias}'"
 
   robot.respond /lastfm clear (\S+)/i, (msg) ->
     lastfm      = robot.brain.data.lastfm ?= {}
@@ -50,11 +53,31 @@ module.exports = (robot) ->
       delete lastfm[lastfm_name]
       msg.reply "Alias removed for #{lastfm_name}"
     else
-      msg.reply "No alias for #{lastfm_name}. Try 'lastfm alias <last.fm-user>'"
+      msg.reply "No alias for #{lastfm_name}."
 
   robot.respond /lastfm list/i, (msg) ->
     aliases = ("#{u}->#{a}" for u, a of robot.brain.data.lastfm ?= {})
     msg.reply "Last.fm aliases: #{aliases.join ', '}"
+
+  robot.respond /lastfm (?:lp|last(?: played)?) (\S+)/i, (msg) ->
+    alias = msg.match[1]
+    last_fm.ifMember msg, alias, (nick) ->
+      last_fm.getLatestTrack(nick).then (scrobble) ->
+        artist = scrobble.last.artist
+        track  = scrobble.last.track
+        since  = moment.unix(scrobble.last.ts).fromNow()      
+        msg.reply "#{alias} listened to: #{artist} - #{track} (#{since})"
+
+  robot.respond /lastfm np (\S+)/i, (msg) ->
+    alias = msg.match[1]
+    last_fm.ifMember msg, alias, (nick) ->
+      last_fm.getLatestTrack(nick).then (scrobble) ->
+        if scrobble.np
+          artist = scrobble.np.artist
+          track  = scrobble.np.track
+          msg.reply "#{alias} listens to #{artist} - #{track}"
+        else
+          msg.reply "#{alias} enjoys the silence..."
 
 
 spotify =
@@ -116,6 +139,34 @@ class LastFm
       )
     )
 
+  getLatestTrack: (user) ->
+    def = deferred()
+    options =
+      method: "user.getrecenttracks"
+      user: user
+      limit: 1
+      nowplaying: '"true"'
+    
+    @client.scope().query(options).get() (err, resp, body) =>
+      data = JSON.parse body
+      track = data.recenttracks.track
+      if _.isArray track
+        [np, last] = track
+        np =
+          artist: np.artist["#text"]
+          track: np.name
+      else
+        [np, last] = [null, track]
+
+      def.resolve
+        np: np
+        last:
+          artist: last.artist["#text"]
+          track: last.name
+          ts: last.date.uts
+
+    def.promise
+
   getPlayCount: (type, options, user) ->
     def = deferred()
     options.username = user
@@ -145,8 +196,24 @@ class LastFm
           members[user.name] = true
         callback(key for key, foo of members)
 
+  ifMember: (msg, nick, cb) ->
+    user = @lookupAlias nick
+    if @isMember user
+      cb(user)
+    else
+      msg.reply "not a valid last.fm user or alias"
+
   getAlias: (user) ->
     @robot.brain.data.lastfm[user] ? user
+
+  lookupAlias: (lookupAlias) ->
+    match = _.find _.pairs(@robot.brain.data.lastfm), (pair) ->
+      [user, alias] = pair
+      alias is lookupAlias
+    if match then match[0] else lookupAlias
+
+  isMember: (user) ->
+    user in @users
 
   buildClient: ->
     options =
