@@ -65,8 +65,9 @@ module.exports = (robot) ->
       last_fm.getLatestTrack(nick).then (scrobble) ->
         artist = scrobble.last.artist
         track  = scrobble.last.track
-        since  = moment.unix(scrobble.last.ts).fromNow()      
-        msg.reply "#{alias} listened to: #{artist} - #{track} (#{since})"
+        spotify.search(msg, artist, track).then (href) ->
+          since  = moment.unix(scrobble.last.ts).fromNow()      
+          msg.reply "#{alias} listened to #{artist} - #{track} (#{since})\n#{href}"
 
   robot.respond /lastfm np (\S+)/i, (msg) ->
     alias = msg.match[1]
@@ -75,7 +76,8 @@ module.exports = (robot) ->
         if scrobble.np
           artist = scrobble.np.artist
           track  = scrobble.np.track
-          msg.reply "#{alias} listens to #{artist} - #{track}"
+          spotify.search(msg, artist, track).then (href) ->
+            msg.reply "#{alias} listens to #{artist} - #{track}\n#{href}"
         else
           msg.reply "#{alias} enjoys the silence..."
 
@@ -99,7 +101,18 @@ spotify =
   artist: (data) ->
     "Artist: #{data.artist.name}"
 
-
+  search: (msg, artist, track) ->
+    def = deferred()
+    url = "http://ws.spotify.com/search/1/track.json"
+    options =
+      q: "#{artist} - #{track}"
+    msg.http(url).query(options).get() (err, resp, body) ->
+      data = JSON.parse body
+      if data.info.num_results > 0
+        def.resolve data.tracks[0].href
+      else
+        def.resolve null
+    def.promise
 
 
 class LastFm
