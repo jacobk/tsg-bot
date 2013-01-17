@@ -20,6 +20,8 @@
 deferred = require "deferred"
 _ = require "underscore"
 moment = require "moment"
+querystring = require('querystring')
+
 
 lastfm_key    = process.env.LAST_FM_KEY
 lastfm_groups = process.env.LAST_FM_GROUPS || "tsg"
@@ -35,7 +37,10 @@ module.exports = (robot) ->
         msg.send spotify[data.info.type](data)
         type = data.info.type
         if type in ["track", "album", "artist"]
-          last_fm.getPlayCounts type, msg, data
+          last_fm.getPlayCounts(type, data).then (listeners) ->
+            if listeners.length > 0
+              listeners = ("#{last_fm.getAlias user.user}(#{user.count})" for user in listeners)
+              msg.send "Listeners: #{listeners.join(", ")}"
 
   robot.respond /lastfm alias (\S+) (\S+)/i, (msg) ->
     lastfm      = robot.brain.data.lastfm ?= {}
@@ -66,7 +71,7 @@ module.exports = (robot) ->
         artist = scrobble.last.artist
         track  = scrobble.last.track
         spotify.search(msg, artist, track).then (href) ->
-          since  = moment.unix(scrobble.last.ts).fromNow()      
+          since  = moment.unix(scrobble.last.ts).fromNow()
           msg.reply "#{alias} listened to #{artist} - #{track} (#{since})\n#{href}"
 
   robot.respond /lastfm np (\S+)/i, (msg) ->
@@ -80,6 +85,25 @@ module.exports = (robot) ->
             msg.reply "#{alias} listens to #{artist} - #{track}\n#{href}"
         else
           msg.reply "#{alias} enjoys the silence..."
+
+  robot.router.get '/hubot/spotify', (req, res) ->
+    res.setHeader 'Content-Type', 'text/html'
+    res.end listenersApp()
+
+  robot.router.get '/hubot/spotify/listeners', (req, res) ->
+    query = querystring.parse(req._parsedUrl.query)
+    href = query.href
+    robot.http(spotify.uri href).get() (err, resp, body) ->
+      data = JSON.parse(body)
+      track = spotify[data.info.type](data)
+      type = data.info.type
+      if type in ["track", "album", "artist"]
+        last_fm.getPlayCounts(type, data).then (listeners) ->
+          response =
+            track: track,
+            listeners: listeners
+          res.setHeader 'Content-Type', 'application/json'
+          res.end JSON.stringify(response)
 
 
 spotify =
@@ -126,7 +150,8 @@ class LastFm
     @getGroupMembers groups.split(/\s*,\s*/), (members) =>
       @users = members
 
-  getPlayCounts: (type, msg, data) ->
+  getPlayCounts: (type, data) ->
+    def = deferred()
     options = method: "#{type}.getInfo"
 
     if type is "track"
@@ -142,15 +167,13 @@ class LastFm
       @getPlayCount(type, options, user)
     counts.then(
       ((result) =>
-        listeners = (user for user in result when user.count > 0)
-        if listeners.length > 0
-          listeners = ("#{@getAlias user.user}(#{user.count})" for user in listeners)
-          msg.send "Listeners: #{listeners.join(", ")}"
+        def.resolve (user for user in result when user.count > 0)
       ),
       ((err) ->
         console.log "ERR", err
       )
     )
+    def.promise
 
   getLatestTrack: (user) ->
     def = deferred()
@@ -159,7 +182,7 @@ class LastFm
       user: user
       limit: 1
       nowplaying: '"true"'
-    
+
     @client.scope().query(options).get() (err, resp, body) =>
       data = JSON.parse body
       track = data.recenttracks.track
@@ -233,3 +256,161 @@ class LastFm
       api_key: @key
       format: "json"
     @client = @robot.http(LastFm.BASE_URL).query(options)
+
+listenersApp = () ->
+  """
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8">
+        <title>Links!</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
+        <style>
+          body {
+            margin-top: 70px;
+          }
+          form {
+            margin-bottom: 30px;
+          }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+        </div>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.3/underscore-min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.9/backbone-min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/1.7.2/moment.min.js"></script>
+
+
+        <script type="text/template" id="search-query-tmpl">
+          <div class="row">
+            <div class="span8 offset2">
+              <form class="form-search">
+                <input type="text" class="input-xxlarge" placeholder="PUT SPOTIFY LINK HERE PLEASE">
+                <button type="submit" class="btn">WHO WAS?</button>
+              </form>
+            </div>
+          </div>
+        </script>
+
+        <script type="text/template" id="table-tmpl">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Listener</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </script>
+
+        <script type="text/template" id="table-row-tmpl">
+          <td><%= user %></td>
+          <td><%= count %></td>
+        </script>
+
+        <script>
+          var Query = Backbone.Model.extend({
+            defaults: {
+              href: ""
+            }
+          });
+
+          var Listener = Backbone.Model.extend({});
+
+          var Listeners = Backbone.Collection.extend({
+            model: Listener,
+
+            url: function() {
+              return "/hubot/spotify/listeners?href=" + this.query.get("href");
+            },
+
+            initialize: function(models, query) {
+              this.query = query;
+              this.query.on("change:href", function() {
+                this.fetch();
+              }, this);
+            },
+
+            parse: function(response) {
+              return response.listeners;
+            }
+          });
+
+          var SearchView = Backbone.View.extend({
+            template: _.template($("#search-query-tmpl").html()),
+
+            events: {
+              "click button": "onSearch"
+            },
+
+            initialize: function() {
+              _.bindAll(this, "onSearch");
+            },
+
+            render: function() {
+              this.$el.html(this.template(this.model.toJSON()));
+              return this;
+            },
+
+            onSearch: function(e) {
+              e.preventDefault();
+              this.model.set("href", this.$("input").val());
+            }
+          });
+
+          var ResultsView = Backbone.View.extend({
+            template: _.template($("#table-tmpl").html()),
+
+            initialize: function() {
+              _.bindAll(this, "render");
+              this.collection.on("change reset", this.render)
+            },
+
+            render: function() {
+              this.$el.html(this.template());
+              this.collection.each(function(listener) {
+                var itemView = new ListenerView({
+                  model: listener
+                });
+                this.$("tbody").append(itemView.render().el);
+              }, this);
+              return this;
+            }
+          });
+
+          var ListenerView = Backbone.View.extend({
+            template: _.template($("#table-row-tmpl").html()),
+
+            tagName: "tr",
+
+            render: function() {
+              this.$el.html(this.template(this.model.toJSON()));
+              return this;
+            },
+          });
+
+          $(function() {
+            var query = new Query(),
+                listeners = new Listeners([], query),
+                searchView = new SearchView({
+                  model: query
+                }),
+                resultsView = new ResultsView({
+                  collection: listeners
+                });
+
+            listeners.comparator = function(a) {
+              return -a.get("count");
+            };
+
+            $(".container").append(searchView.render().el);
+            $(".container").append(resultsView.render().el);
+          });
+        </script>
+    </body>
+</html>
+"""
