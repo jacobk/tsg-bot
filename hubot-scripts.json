@@ -4,5 +4,6 @@
     "twitter.coffee",
     "uptime.coffee",
     "tweet-content.coffee",
-    "heroku-status.coffee"
+    "heroku-status.coffee",
+    "f-ing-weather.coffee"
 ]
