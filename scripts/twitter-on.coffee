@@ -29,4 +29,4 @@ module.exports = (robot) ->
           tweet  = msg.random tweets.results
           msg.send "@#{tweet.from_user}: #{tweet.text}"
         else
-          msg.reply "No one is tweeting about that."
+          msg.send "No one is tweeting about that."
