@@ -18,7 +18,7 @@ module.exports = (robot) ->
     search = escape(msg.match[1])
     options =
       q: search
-      result_type: 'popular'
+      result_type: 'mixed'
 
     msg.http('http://search.twitter.com/search.json')
       .query(options)
