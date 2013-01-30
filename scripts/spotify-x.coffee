@@ -25,6 +25,7 @@ querystring = require('querystring')
 
 lastfm_key    = process.env.LAST_FM_KEY
 lastfm_groups = process.env.LAST_FM_GROUPS || "tsg"
+soundcloud_client_id = process.env.SOUNDCLOUD_CLIENT_ID
 
 module.exports = (robot) ->
 
@@ -41,6 +42,36 @@ module.exports = (robot) ->
             if listeners.length > 0
               listeners = ("#{last_fm.getAlias user.user}(#{user.count})" for user in listeners)
               msg.send "Listeners: #{listeners.join(", ")}"
+
+  # Totally hacked together support for SoundCloud URLs
+  robot.hear soundcloud.link, (msg) ->
+    options =
+      url: msg.match[0]
+      client_id: soundcloud_client_id
+    msg.http(soundcloud.uri).query(options).get() (err, res, body) ->
+      if res.statusCode is 302
+        msg.http(JSON.parse(body).location).get() (err2, res2, body2) ->
+          if res2.statusCode is 200
+            data = JSON.parse(body2)
+            if data.kind is "track"
+              # Assume title includes title
+              [artist, track] = data.title.split(/\s*-\s*/)
+
+              # Nope, assume the username is the artist
+              unless track
+                track = artist
+                artist = data.user.username
+
+              # Fake spotify data format to make it work with lastfm-stuff
+              spotifake =
+                track:
+                  name: track
+                  artists: [name: artist]
+              msg.send "Track: #{artist} - #{track}"
+              last_fm.getPlayCounts("track", spotifake).then (listeners) ->
+                if listeners.length > 0
+                  listeners = ("#{last_fm.getAlias user.user}(#{user.count})" for user in listeners)
+                  msg.send "Listeners: #{listeners.join(", ")}"
 
   robot.respond /lastfm alias (\S+) (\S+)/i, (msg) ->
     lastfm      = robot.brain.data.lastfm ?= {}
@@ -137,6 +168,12 @@ spotify =
       else
         def.resolve null
     def.promise
+
+soundcloud =
+  link: /https?:\/\/soundcloud.com\S*/
+
+  uri: "http://api.soundcloud.com/resolve.json"
+
 
 
 class LastFm
