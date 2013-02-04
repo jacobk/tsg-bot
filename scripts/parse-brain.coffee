@@ -52,13 +52,13 @@ class Parse
       # to deal with scoped-client's inability to send multi byte unicode
       .header("Content-Length", Buffer.byteLength(json_data))
       .put((err, req) -> req.end json_data) (err, resp, body) =>
-      if err
-        console.error "Failed to save to Parse.com. Unhandeled error"
-        console.error err
-        return
-      unless resp.statusCode is 200
-        console.error "Failed to save to Parse.com. Got #{resp.statusCode}"
-        console.error body
+        if err
+          console.error "Failed to save to Parse.com. Unhandeled error"
+          console.error err
+          return
+        unless resp.statusCode is 200
+          console.error "Failed to save to Parse.com. Got #{resp.statusCode}"
+          console.error body
 
   buildClient: ->
     @client = @robot.http(@brainUrl())
