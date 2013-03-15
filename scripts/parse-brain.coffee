@@ -16,6 +16,8 @@
 #   jacobk
 
 
+scopedClient = require 'scoped-http-client'
+
 parse_id    = process.env.PARSE_APP_ID
 parse_key   = process.env.PARSE_API_KEY
 parse_brain = process.env.PARSE_BRAIN
@@ -48,10 +50,8 @@ class Parse
   save: (data) =>
     json_data = JSON.stringify(data)
     @client.scope()
-      # Manually set content length and using streaming body handler
-      # to deal with scoped-client's inability to send multi byte unicode
       .header("Content-Length", Buffer.byteLength(json_data))
-      .put((err, req) -> req.end json_data) (err, resp, body) =>
+      .put(json_data) (err, resp, body) =>
         if err
           console.error "Failed to save to Parse.com. Unhandeled error"
           console.error err
@@ -61,7 +61,7 @@ class Parse
           console.error body
 
   buildClient: ->
-    @client = @robot.http(@brainUrl())
+    @client = scopedClient.create(@brainUrl())
       .header("X-Parse-Application-Id", @id)
       .header("X-Parse-REST-API-Key", @key)
       .header("Content-Type", "application/json")
