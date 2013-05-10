@@ -23,7 +23,8 @@ parse_key   = process.env.PARSE_API_KEY
 parse_brain = process.env.PARSE_BRAIN
 
 
-# module.exports = (robot) ->
+module.exports = (robot) ->
+  console.log "parse brain in NOP mode"
 #   client = new Parse(parse_id, parse_key, parse_brain, robot)
 #   client.sync()
 # 
