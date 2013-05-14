@@ -277,7 +277,8 @@ class LastFm
       msg.reply "not a valid last.fm user or alias"
 
   getAlias: (user) ->
-    @robot.brain.data.lastfm[user] ? user
+    user
+    # @robot.brain.data.lastfm[user] ? user
 
   lookupAlias: (lookupAlias) ->
     match = _.find _.pairs(@robot.brain.data.lastfm), (pair) ->
