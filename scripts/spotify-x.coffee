@@ -113,7 +113,16 @@ module.exports = (robot) ->
           artist = scrobble.np.artist
           track  = scrobble.np.track
           spotify.search(msg, artist, track).then (href) ->
-            msg.reply "#{alias} listens to #{artist} - #{track}\n#{href}"
+            msg.reply "#{alias} listens to #{artist} - #{track}\n#{href || '(not on spotify)'}"
+            # Fake spotify data format to make it work with lastfm-stuff
+            spotifake =
+              track:
+                name: track
+                artists: [name: artist]
+            last_fm.getPlayCounts("track", spotifake).then (listeners) ->
+              if listeners.length > 0
+                listeners = ("#{last_fm.getAlias user.user}(#{user.count})" for user in listeners)
+                msg.send "Listeners: #{listeners.join(", ")}"
         else
           msg.reply "#{alias} enjoys the silence..."
 
