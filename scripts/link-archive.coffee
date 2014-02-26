@@ -30,58 +30,58 @@ version = "2"
 
 module.exports = (robot) ->
 
-  # robot.brain.on "loaded", ->
-  #   robot.brain.data.links ?=
-  #     version: version
-  #     index: 0
-  #     db: {}
-  #     posters: {}
-  #   brain_version = robot.brain.data.links.version
-  #   if brain_version isnt version
-  #     throw "Wrong link-archive version want: #{version} got: #{brain_version}"
-  # 
-  # robot.hear util.pattern, (msg) ->
-  #   links = robot.brain.data.links
-  #   url   = util.normalize msg.match[1]
-  #   nick  = msg.message.user.name
-  #   link  = links.db[util.md5hash url] ?=
-  #     id: ++links.index
-  #     url: url
-  #     posters: []
-  #   post  =
-  #     nick: nick
-  #     ts: new Date().getTime()
-  # 
-  #   link.posters.push post
-  #   links.posters[nick] = (links.posters[nick] ? 0) + 1
-  #   op = link.posters[0]
-  # 
-  #   if op.nick isnt nick
-  #     msg.reply "#{op.nick} posted the same link #{moment(new Date(op.ts)).fromNow()}"
-  #   robot.brain.save()
-  # 
-  # robot.respond /links$/i, (msg) ->
-  #   msg.send process.env.HEROKU_URL + "hubot/links"
-  # 
-  # robot.respond /(link|url)( me)? (\d+)/i, (msg) ->
-  #   db = robot.brain.data.links.db
-  #   id = parseInt msg.match[3], 10
-  #   links = for hash, link of db when link.id is id
-  #     link
-  #   link = links.pop()
-  #   if link
-  #     msg.send "op: #{link.posters[0].nick} url: #{link.url}"
-  #   else
-  #     msg.reply "Sorry, no link with that id"
-  # 
-  # robot.router.get '/hubot/links', (req, res) ->
-  #   links = for hash, link of robot.brain.data.links.db
-  #     link
-  #   posters = for nick, count of robot.brain.data.links.posters
-  #     nick: nick
-  #     count: count
-  #   res.setHeader 'Content-Type', 'text/html'
-  #   res.end pageContent(JSON.stringify(links), JSON.stringify(posters))
+  robot.brain.on "loaded", ->
+    robot.brain.data.links ?=
+      version: version
+      index: 0
+      db: {}
+      posters: {}
+    brain_version = robot.brain.data.links.version
+    if brain_version isnt version
+      throw "Wrong link-archive version want: #{version} got: #{brain_version}"
+
+  robot.hear util.pattern, (msg) ->
+    links = robot.brain.data.links
+    url   = util.normalize msg.match[1]
+    nick  = msg.message.user.name
+    link  = links.db[util.md5hash url] ?=
+      id: ++links.index
+      url: url
+      posters: []
+    post  =
+      nick: nick
+      ts: new Date().getTime()
+
+    link.posters.push post
+    links.posters[nick] = (links.posters[nick] ? 0) + 1
+    op = link.posters[0]
+
+    if op.nick isnt nick
+      msg.reply "#{op.nick} posted the same link #{moment(new Date(op.ts)).fromNow()}"
+    robot.brain.save()
+
+  robot.respond /links$/i, (msg) ->
+    msg.send process.env.HEROKU_URL + "hubot/links"
+
+  robot.respond /(link|url)( me)? (\d+)/i, (msg) ->
+    db = robot.brain.data.links.db
+    id = parseInt msg.match[3], 10
+    links = for hash, link of db when link.id is id
+      link
+    link = links.pop()
+    if link
+      msg.send "op: #{link.posters[0].nick} url: #{link.url}"
+    else
+      msg.reply "Sorry, no link with that id"
+
+  robot.router.get '/hubot/links', (req, res) ->
+    links = for hash, link of robot.brain.data.links.db
+      link
+    posters = for nick, count of robot.brain.data.links.posters
+      nick: nick
+      count: count
+    res.setHeader 'Content-Type', 'text/html'
+    res.end pageContent(JSON.stringify(links), JSON.stringify(posters))
 
 
 util =
