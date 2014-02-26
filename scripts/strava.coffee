@@ -1,15 +1,10 @@
 # Description:
 #   Strava stuff
 #
-#
-# Commands:
-#   hubot link me <link id> - Posts link with that id from the link archive
-#   hubot links - Provides a link to the links archive page
-#
 # Author:
 #   jacobk
-
-# TODO
+#
+# TODO:
 # * alias with irc nicks
 
 _ = require "underscore"
@@ -27,9 +22,9 @@ module.exports = (robot) ->
     robot.brain.data.strava ?=
       lastActivityId: 0
     poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot)
-    # setInterval =>
-    #   poller.poll()
-    # , strava_poll_freq
+    setInterval =>
+      poller.poll()
+    , strava_poll_freq
 
 # Assume monotonically increasing strava activity ids
 class StravaClubPoller
@@ -44,14 +39,17 @@ class StravaClubPoller
   poll: ->
     @robot.logger.debug "Polling Strava.com"
     @client.get() (err, resp, body) =>
-      console.error "Failed to poll Strava.com" unless resp.statusCode is 200
-      @robot.logger.debug "Handling response: #{body}"
+      @robot.logger.error "Failed to poll Strava.com" unless resp.statusCode is 200
       data = JSON.parse(body)
       @handleStravaResponse data
 
   handleStravaResponse: (data) ->
     newActivities = @findNewActivities data
-    @announce activity for activity in newActivities
+    unless _.isEmpty(newActivities)
+      @announce activity for activity in newActivities
+      @updateCursor newActivities
+    else
+      @robot.logger.debug "No new Strava activities"
 
   findNewActivities: (data) ->
     @robot.logger.debug "Looking for new activities (cursor: #{@currentCursor()})"
@@ -61,7 +59,10 @@ class StravaClubPoller
     @robot.brain.data.strava.lastActivityId
 
   updateCursor: (activities) ->
-    @robot.brain.data.strava.lastActivityId = _.last(activities).id
+    newCursor = _.first(activities).id
+    @robot.logger.debug "Updating cursor. New cursor: #{newCursor}"
+    @robot.brain.data.strava.lastActivityId = newCursor
+    @robot.brain.save()
 
   announce: (activity) ->
     @robot.messageRoom @room, @formatActivity(activity)
