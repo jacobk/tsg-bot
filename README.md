@@ -42,15 +42,13 @@ $ bin/hubot
 ```shell
 $ export PORT=8080 # Default port, ändra om du kör nått annat på 8080
 $ export HUBOT_LOG_LEVEL=info # Ändra till debug om du vill se mer logging
-
-# För att kunna använda botens "brain" (persistent storage) behövs följande
-$ export PARSE_APP_ID=<LOGGA IN O KOLLA PÅ PARSE.COM>
-$ export PARSE_API_KEY=<LOGGA IN O KOLLA PÅ PARSE.COM>
-$ export PARSE_BRAIN=<ID PÅ ETT OBJECT DU SKAPAT I PARSE, SE NEDAN>
 ```
 
-#### Skapa en parse brain
+#### Skapa en parse brain 
 
+Parse används inte längre
+
+<del>
 Det görs lättast med curl. Men fiddler osv. funkar också.
 
 Credentials till vårt Parse.com konto hittas i [detta google doc](https://docs.google.com/document/d/1QNyat-n3vl6ulFGGfRMAH3o7v9F7pB8AQFdq4roUvXk/edit)
