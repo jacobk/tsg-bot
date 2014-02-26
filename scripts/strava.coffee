@@ -78,7 +78,7 @@ class StravaClubPoller
     pace_min = Math.floor(pace)
     pace_secs = ((pace - pace_min) * 60).toFixed(0)
     pace = "#{pace_min}:#{pace_secs}"
-    "New Strava.com activiy: #{fullName} #{verb} #{distance}km in #{duration} (#{pace} min/km)"
+    "New strava activity: #{fullName} #{verb} #{distance}km in #{duration} (#{pace} min/km)"
 
   buildClient: ->
     @client = scopedClient.create(@url())
