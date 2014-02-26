@@ -44,9 +44,9 @@ $ export PORT=8080 # Default port, ändra om du kör nått annat på 8080
 $ export HUBOT_LOG_LEVEL=info # Ändra till debug om du vill se mer logging
 ```
 
-#### Skapa en parse brain 
+#### ~~Skapa en parse brain~~
 
-Parse används inte längre
+*NB. Parse används inte längre. Använder redis to go gratis-instans som temporär lösning*
 
 <del>
 Det görs lättast med curl. Men fiddler osv. funkar också.
@@ -54,7 +54,7 @@ Det görs lättast med curl. Men fiddler osv. funkar också.
 Credentials till vårt Parse.com konto hittas i [detta google doc](https://docs.google.com/document/d/1QNyat-n3vl6ulFGGfRMAH3o7v9F7pB8AQFdq4roUvXk/edit)
 
 Det går att inspektera Parse.com-datan i [data browsern](https://parse.com/apps/tsg--2/collections#class/brains/p0).
-
+</del>
 ```shell
 $ curl -X POST \
     -H "X-Parse-Application-Id: <LOGGA IN O KOLLA PÅ PARSE.COM>" \
