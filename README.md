@@ -4,9 +4,9 @@
 
 ### Pre-reqs
 
-#### Utvecklings miljö
+#### Utvecklingsmiljö
 
-1. Github konto + [git client](http://git-scm.com/), eller [github för windows](http://windows.github.com/) eller [github för mac](http://mac.github.com/).
+1. Githubkonto + [git client](http://git-scm.com/), eller [github för windows](http://windows.github.com/) eller [github för mac](http://mac.github.com/).
 
 
 #### Deployment
@@ -28,7 +28,7 @@ $ git clone git@github.com:jacobk/tsg-bot.git
 
 ```shell
 $ cd tsg-bot
-$ npm install    # Körs även automatikst om man försöker starta boten
+$ npm install    # Körs även automatiskt om man försöker starta boten
 ```
 
 * Starta boten. Den startas med Shell-adaptern direkt i terminalen så man kan prata med den utan att klydda med IRC osv.
