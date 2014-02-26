@@ -27,9 +27,9 @@ module.exports = (robot) ->
     robot.brain.data.strava ?=
       lastActivityId: 0
     poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot)
-    setInterval =>
-      poller.poll()
-    , strava_poll_freq
+    # setInterval =>
+    #   poller.poll()
+    # , strava_poll_freq
 
 # Assume monotonically increasing strava activity ids
 class StravaClubPoller
