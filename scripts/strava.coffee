@@ -20,8 +20,6 @@ bitly_access_token   = process.env.BITLY_ACCESS_TOKEN
 module.exports = (robot) ->
 
   robot.brain.on "loaded", ->
-    robot.logger.debug "Brain loaded in strava script", strava_poll_freq
-    robot.logger.debug strava_poll_freq
     robot.brain.data.strava ?=
       lastActivityId: 0
     poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot)
@@ -90,10 +88,6 @@ class StravaClubPoller
 
   activityUrl: (activity) ->
     "http://www.strava.com/activities/#{activity.id}"
-
-  # shortenUrl: (url) ->
-  #   bitly_url
-
 
   buildClient: ->
     @client = scopedClient.create(@url())
