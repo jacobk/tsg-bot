@@ -81,6 +81,7 @@ class StravaClubPoller
     pace = 1000 / (avg_speed * 60)
     pace_min = Math.floor(pace)
     pace_secs = ((pace - pace_min) * 60).toFixed(0)
+    pace_secs = "0#{pace_secs}" if pace_secs < 10
     pace = "#{pace_min}:#{pace_secs}"
     "New strava activity \"#{activity.name}\": " +
       "#{fullName} #{verb} #{distance} km in #{duration} (#{pace} min/km) " +
