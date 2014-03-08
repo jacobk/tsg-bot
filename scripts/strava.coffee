@@ -94,7 +94,7 @@ class StravaClubPoller
     @client = scopedClient.create(@url())
 
   url: ->
-   "https://www.strava.com/api/v3/clubs/#{@clubId}/activities?per_page=10&access_token=#{@accessToken}"
+   "https://www.strava.com/api/v3/clubs/#{@clubId}/activities?access_token=#{@accessToken}"
 
 class BitlyClient
 
