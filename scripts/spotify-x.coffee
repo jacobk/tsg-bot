@@ -131,7 +131,7 @@ module.exports = (robot) ->
     period = {week: "7day", month: "1month", year: "12month"}[msg.match[2]]
     period ?= "7day"
     last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
-      msg.reply ("\"#{track[0]}\" -> #{track[1]}" for track in topTracks).join(", ")
+      msg.reply ("\"#{track[0]}\" (#{track[1]})" for track in topTracks).join(", ")
 
   robot.router.get '/hubot/spotify', (req, res) ->
     res.setHeader 'Content-Type', 'text/html'
