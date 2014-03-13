@@ -133,6 +133,12 @@ module.exports = (robot) ->
     last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
       msg.reply ("#{track[0]} (#{track[1]})" for track in topTracks).join(", ")
 
+  robot.respond /lastfm[?]/i, (msg) ->
+    usage = """Last played track for nick -> /lastfm (?:lp|last(?: played)?) (\S+)/
+    Currently playing track for nick -> /lastfm np (\S+)/
+    Show aggregated top tracks for lastfm group -> /lastfm (\d+ )?trend(?:ing)? ?(?:this )?(week|month|year)?/"""
+    msg.send usage
+
   robot.router.get '/hubot/spotify', (req, res) ->
     res.setHeader 'Content-Type', 'text/html'
     res.end listenersApp()
