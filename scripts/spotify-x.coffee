@@ -128,7 +128,7 @@ module.exports = (robot) ->
 
   robot.respond /lastfm (\d+ )?trend(?:ing)? ?(?:this )?(week|month|year)?/i, (msg) ->
     nbrOfTracks = parseInt msg.match[1] ? 10, 10
-    period = {week: "7day", month: "1month", year: "12month"}[msg.match[2]]
+    period = {week: "7day", month: "2month", year: "12month"}[msg.match[2]]
     period ?= "7day"
     last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
       msg.reply ("#{track[0]} (#{track[1]})" for track in topTracks).join(", ")
