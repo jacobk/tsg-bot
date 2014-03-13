@@ -126,6 +126,13 @@ module.exports = (robot) ->
         else
           msg.reply "#{alias} enjoys the silence..."
 
+  robot.respond /lastfm (\d+ )?trend(?:ing)? ?(?:this )?(week|month|year)?/i, (msg) ->
+    nbrOfTracks = parseInt msg.match[1] ? 10, 10
+    period = {week: "7day", month: "1month", year: "12month"}[msg.match[2]]
+    period ?= "7day"
+    last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
+      msg.reply ("\"#{track[0]}\" -> #{track[1]}" for track in topTracks).join(", ")
+
   robot.router.get '/hubot/spotify', (req, res) ->
     res.setHeader 'Content-Type', 'text/html'
     res.end listenersApp()
@@ -266,7 +273,7 @@ class LastFm
     def.promise
 
   getGroupMembers: (groups, callback) ->
-    console.log "Last.fm getting members for groups #{groups}"
+    @robot.logger.info "Last.fm getting members for groups #{groups}"
     members = {}
     for group in groups
       options =
@@ -277,6 +284,44 @@ class LastFm
         for user in data.members.user
           members[user.name] = true
         callback(key for key, foo of members)
+
+  getTopTracks: (nbrOfTracks, period) ->
+    # TODO
+    # * lookup on spotify
+    # * show who listned to what (avaiable on groups page)
+    def = deferred()
+    options =
+      method: "user.getTopTracks"
+      period: period
+      limit: 50
+
+    userTopTracks = deferred.map @users, (user) =>
+      @robot.logger.info "Getting to get top tracks for #{user}"
+      options.user = user
+      gettingTracks = deferred()
+      @client.scope().query(options).get() (err, resp, body) =>
+        data = JSON.parse(body)
+        tracks = data.toptracks?.track ? []
+        topTracks = {}
+        for track in tracks
+          fullTrack = "#{track.artist.name} - #{track.name}"
+          topTracks[fullTrack] = parseInt(track.playcount, 10)
+        @robot.logger.info "Got top tracks for #{user} (#{tracks.length} tracks)"
+        gettingTracks.resolve topTracks
+      gettingTracks.promise()
+
+    userTopTracks.then (usersTracks) =>
+      topTracks = {}
+      for userTracks in usersTracks
+        for track, count of userTracks
+          topTracks[track] ?= 0
+          topTracks[track] += count
+
+      @robot.logger.debug JSON.stringify(topTracks)
+      topTracks = _.sortBy _.pairs(topTracks), (pair) -> pair[1]
+      def.resolve topTracks.reverse()[0..nbrOfTracks]
+
+    def.promise()
 
   ifMember: (msg, nick, cb) ->
     user = @lookupAlias nick
