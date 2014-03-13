@@ -319,7 +319,7 @@ class LastFm
 
       @robot.logger.debug JSON.stringify(topTracks)
       topTracks = _.sortBy _.pairs(topTracks), (pair) -> pair[1]
-      def.resolve topTracks.reverse()[0..nbrOfTracks]
+      def.resolve topTracks.reverse()[0...nbrOfTracks]
 
     def.promise()
 
