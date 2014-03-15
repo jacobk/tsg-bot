@@ -126,12 +126,20 @@ module.exports = (robot) ->
         else
           msg.reply "#{alias} enjoys the silence..."
 
-  robot.respond /lastfm (\d+ )?trend(?:ing)? ?(?:this )?(week|month|year)?/i, (msg) ->
+  robot.respond /lastfm (\d+ )?trend(?:ing)? ?(?:this )?(now|week|month|year)?/i, (msg) ->
     nbrOfTracks = parseInt msg.match[1] ? 10, 10
     period = {week: "7day", month: "3month", year: "12month"}[msg.match[2]]
-    period ?= "7day"
-    last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
-      msg.reply ("#{track[0]} (#{track[1]})" for track in topTracks).join(", ")
+    period ?= "now"
+
+    formatter = (topTracks) ->
+      ("#{track[0]} (#{track[1]})" for track in topTracks).join(", ")
+
+    if period is "now"
+      last_fm.getGroupRecentTracks(nbrOfTracks, period).then (topTracks) ->
+        msg.reply formatter(topTracks)
+    else
+      last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
+        msg.reply formatter(topTracks)
 
   robot.respond /lastfm[?]/i, (msg) ->
     usage = """Last played track for nick -> /lastfm (?:lp|last(?: played)?) (\S+)/
@@ -291,6 +299,34 @@ class LastFm
           members[user.name] = true
         callback(key for key, foo of members)
 
+  getGroupRecentTracks: (nbrOfTracks) ->
+    def = deferred()
+    options =
+      method: "user.getRecentTracks"
+      from: (new Date().getTime()/1000 - 2*3600).toFixed()
+      limit: 50
+
+    membersRecentTracksP = deferred.map @users, (user) =>
+      @robot.logger.info "Getting to get recent tracks for #{user}"
+      options.user = user
+      recentTracksP = deferred()
+      @client.scope().query(options).get() (err, resp, body) =>
+        data = JSON.parse(body)
+        tracks = data.recenttracks?.track ? []
+        recentTracks = {}
+        for track in tracks
+          fullTrack = "#{track.artist['#text']} - #{track.name}"
+          recentTracks[fullTrack] ?= 0
+          recentTracks[fullTrack] += 1
+        @robot.logger.info "Got recent tracks for #{user} (#{tracks.length} tracks)"
+        recentTracksP.resolve recentTracks
+      recentTracksP.promise()
+
+    membersRecentTracksP.then (usersTracks) =>
+      def.resolve @compileTopTrackStats usersTracks, nbrOfTracks
+
+    def.promise()
+
   getTopTracks: (nbrOfTracks, period) ->
     # TODO
     # * lookup on spotify
@@ -317,17 +353,19 @@ class LastFm
       gettingTracks.promise()
 
     userTopTracks.then (usersTracks) =>
-      topTracks = {}
-      for userTracks in usersTracks
-        for track, count of userTracks
-          topTracks[track] ?= 0
-          topTracks[track] += count
-
-      @robot.logger.debug JSON.stringify(topTracks)
-      topTracks = _.sortBy _.pairs(topTracks), (pair) -> pair[1]
-      def.resolve topTracks.reverse()[0...nbrOfTracks]
+      def.resolve @compileTopTrackStats usersTracks, nbrOfTracks
 
     def.promise()
+
+  compileTopTrackStats: (usersTracks, nbrOfTracks) ->
+    topTracks = {}
+    for userTracks in usersTracks
+      for track, count of userTracks
+        topTracks[track] ?= 0
+        topTracks[track] += count
+    topTracks = _.sortBy _.pairs(topTracks), (pair) -> pair[1]
+    topTracks.reverse()[0...nbrOfTracks]
+
 
   ifMember: (msg, nick, cb) ->
     user = @lookupAlias nick
