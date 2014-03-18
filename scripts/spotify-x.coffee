@@ -303,7 +303,7 @@ class LastFm
     def = deferred()
     options =
       method: "user.getRecentTracks"
-      from: (new Date().getTime()/1000 - 2*3600).toFixed()
+      from: moment().hours(4).minutes(0).unix()
       limit: 50
 
     membersRecentTracksP = deferred.map @users, (user) =>
