@@ -22,7 +22,8 @@
     "moment": "~1.7.2",
     "deferred": "~0.6.1",
     "underscore": "~1.4.3",
-    "scoped-http-client": "0.9.8"
+    "scoped-http-client": "0.9.8",
+    "github": "^0.1.14"
   },
   "engines": {
     "node": "0.8.x",
