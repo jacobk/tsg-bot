@@ -132,14 +132,39 @@ module.exports = (robot) ->
     period ?= "now"
 
     formatter = (topTracks) ->
-      ("#{track[0]} (#{track[1]})" for track in topTracks).join(", ")
+      ("##{idx+1}(#{track[1]})> #{track[0]} --" for track,idx in topTracks).join(" ")
+
+    saveTopTracks = (topTracks) ->
+      robot.brain.data.lastTopTracks = topTracks
 
     if period is "now"
       last_fm.getGroupRecentTracks(nbrOfTracks, period).then (topTracks) ->
+        saveTopTracks(topTracks)
         msg.reply formatter(topTracks)
     else
       last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
         msg.reply formatter(topTracks)
+        saveTopTracks(topTracks)
+
+  robot.respond /lastfm who\s?(?:is)? #?(\d+)/i, (msg) ->
+    tracks = robot.brain.data.lastTopTracks
+    if tracks?
+      idx = parseInt msg.match[1], 10
+      track = tracks[idx-1]
+      if track?
+        [artist, song] = track[0].split " - ", 2
+        spotifake =
+          track:
+            name: song
+            artists: [name: artist]
+        last_fm.getPlayCounts("track", spotifake).then (listeners) ->
+          if listeners.length > 0
+            listeners = ("#{last_fm.getAlias user.user}(#{user.count})" for user in listeners)
+            msg.send "Listeners: #{listeners.join(", ")}"
+      else
+        msg.reply "IndexOutOfFuckingBoundsExFuckingCeption"
+    else
+      msg.reply "Sorry, don't know what's trending"
 
   robot.respond /lastfm[?]/i, (msg) ->
     usage = """Last played track for nick -> /lastfm (?:lp|last(?: played)?) (\S+)/
