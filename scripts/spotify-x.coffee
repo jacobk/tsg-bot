@@ -326,9 +326,10 @@ class LastFm
 
   getGroupRecentTracks: (nbrOfTracks) ->
     def = deferred()
+    from = if moment().hours() < 4 then (moment().hours(4).minutes(0).subtract('days', 1)) else (moment().hours(4).minutes(0).unix())
     options =
       method: "user.getRecentTracks"
-      from: moment().hours(4).minutes(0).unix()
+      from: from
       limit: 50
 
     membersRecentTracksP = deferred.map @users, (user) =>
