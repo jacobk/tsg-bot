@@ -75,7 +75,7 @@ class StravaClubPoller
     athlete = activity.athlete
     fullName = "#{athlete.firstname} #{athlete.lastname}"
     verb = {"Run": "ran", "Ride": "rode"}[activity.type]
-    distance = (activity.distance / 1000.0).toFixed(2)
+    distance = (activity.distance / 1000.0).toFixed(1)
     duration = moment.utc(activity.moving_time*1000).format("HH:mm:ss")
     avg_speed = activity.distance / activity.moving_time
     pace = 1000 / (avg_speed * 60)
