@@ -83,9 +83,12 @@ class StravaClubPoller
     pace_secs = ((pace - pace_min) * 60).toFixed(0)
     pace_secs = "0#{pace_secs}" if pace_secs < 10
     pace = "#{pace_min}:#{pace_secs}"
+    heartrate = "#{activity.average_heartrate}"
+    heartrate_string = ""
+    heartrate_string = "with average heart rate being #{heartrate}bpm" if "#{heartrate}" > 0
     "New strava activity \"#{activity.name}\": " +
-      "#{fullName} #{verb} #{distance} km in #{duration} (#{pace} min/km) " +
-      "near #{activity.location_city}, #{activity.location_state}, #{activity.location_country} #{shortUrl}"
+      "#{fullName} #{verb} #{distance} km in #{duration} (#{pace} min/km) #{heartrate_string}" +
+      "near #{activity.location_city}, #{activity.location_country} #{shortUrl}"
 
   activityUrl: (activity) ->
     "http://www.strava.com/activities/#{activity.id}"
