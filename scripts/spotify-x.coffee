@@ -126,23 +126,24 @@ module.exports = (robot) ->
         else
           msg.reply "#{alias} enjoys the silence..."
 
-  robot.respond /lastfm (\d+ )?trend(?:ing)? ?(?:this )?(now|week|month|year)?/i, (msg) ->
+  robot.respond /lastfm (\d+ )?trending ?(artists?|tracks?)? ?(?:this )?(now|week|month|year)?/i, (msg) ->
     nbrOfTracks = parseInt msg.match[1] ? 10, 10
-    period = {week: "7day", month: "3month", year: "12month"}[msg.match[2]]
+    groupByArtist = true if /^artist/.test msg.match[2]
+    period = {week: "7day", month: "3month", year: "12month"}[msg.match[3]]
     period ?= "now"
 
     formatter = (topTracks) ->
-      ("##{idx+1}(#{track[1]})> #{track[0]} --" for track,idx in topTracks).join(" ")
+      ("##{idx+1}(#{track[1].length})> #{track[0]}" for track,idx in topTracks).join(" -- ")
 
     saveTopTracks = (topTracks) ->
       robot.brain.data.lastTopTracks = topTracks
 
     if period is "now"
-      last_fm.getGroupRecentTracks(nbrOfTracks, period).then (topTracks) ->
+      last_fm.getGroupRecentTracks(nbrOfTracks, groupByArtist).then (topTracks) ->
         saveTopTracks(topTracks)
         msg.reply formatter(topTracks)
     else
-      last_fm.getTopTracks(nbrOfTracks, period).then (topTracks) ->
+      last_fm.getTopTracks(nbrOfTracks, period, groupByArtist).then (topTracks) ->
         msg.reply formatter(topTracks)
         saveTopTracks(topTracks)
 
@@ -152,15 +153,13 @@ module.exports = (robot) ->
       idx = parseInt msg.match[1], 10
       track = tracks[idx-1]
       if track?
-        [artist, song] = track[0].split " - ", 2
-        spotifake =
-          track:
-            name: song
-            artists: [name: artist]
-        last_fm.getPlayCounts("track", spotifake).then (listeners) ->
-          if listeners.length > 0
-            listeners = ("#{last_fm.getAlias user.user}(#{user.count})" for user in listeners)
-            msg.send "Listeners: #{listeners.join(", ")}"
+        # [artist, song] = track[0].split " - ", 2
+        histogram = {}
+        for listener in track[1]
+          histogram[listener] ?= 0
+          histogram[listener] += 1
+        listeners = ("#{last_fm.getAlias user}(#{count})" for user, count of histogram)
+        msg.send "Listeners: #{listeners.join(", ")}"
       else
         msg.reply "IndexOutOfFuckingBoundsExFuckingCeption"
     else
@@ -324,13 +323,19 @@ class LastFm
           members[user.name] = true
         callback(key for key, foo of members)
 
-  getGroupRecentTracks: (nbrOfTracks) ->
+  getGroupRecentTracks: (nbrOfTracks, groupByArtist=false) ->
     def = deferred()
     from = if moment().hours() < 4 then (moment().hours(4).minutes(0).subtract('days', 1)) else (moment().hours(4).minutes(0).unix())
     options =
       method: "user.getRecentTracks"
       from: from
       limit: 50
+
+    trackKey =
+      if groupByArtist
+        (track) -> track.artist['#text']
+      else
+        (track) -> "#{track.artist['#text']} - #{track.name}"
 
     membersRecentTracksP = deferred.map @users, (user) =>
       @robot.logger.info "Getting to get recent tracks for #{user}"
@@ -341,9 +346,9 @@ class LastFm
         tracks = data.recenttracks?.track ? []
         recentTracks = {}
         for track in tracks
-          fullTrack = "#{track.artist['#text']} - #{track.name}"
-          recentTracks[fullTrack] ?= 0
-          recentTracks[fullTrack] += 1
+          tk = trackKey track
+          recentTracks[tk] ?= []
+          recentTracks[tk].push user
         @robot.logger.info "Got recent tracks for #{user} (#{tracks.length} tracks)"
         recentTracksP.resolve recentTracks
       recentTracksP.promise()
@@ -353,7 +358,7 @@ class LastFm
 
     def.promise()
 
-  getTopTracks: (nbrOfTracks, period) ->
+  getTopTracks: (nbrOfTracks, period, groupByArtist=false) ->
     # TODO
     # * lookup on spotify
     # * show who listned to what (avaiable on groups page)
@@ -361,7 +366,13 @@ class LastFm
     options =
       method: "user.getTopTracks"
       period: period
-      limit: 50
+      limit: 200
+
+    trackKey =
+      if groupByArtist
+        (track) -> track.artist.name
+      else
+        (track) -> "#{track.artist.name} - #{track.name}"
 
     userTopTracks = deferred.map @users, (user) =>
       @robot.logger.info "Getting to get top tracks for #{user}"
@@ -372,8 +383,10 @@ class LastFm
         tracks = data.toptracks?.track ? []
         topTracks = {}
         for track in tracks
-          fullTrack = "#{track.artist.name} - #{track.name}"
-          topTracks[fullTrack] = parseInt(track.playcount, 10)
+          tk = trackKey track
+          count = parseInt(track.playcount, 10)
+          topTracks[tk] ?= []
+          Array.prototype.push.apply topTracks[tk], (user for x in [1..count])
         @robot.logger.info "Got top tracks for #{user} (#{tracks.length} tracks)"
         gettingTracks.resolve topTracks
       gettingTracks.promise()
@@ -386,10 +399,10 @@ class LastFm
   compileTopTrackStats: (usersTracks, nbrOfTracks) ->
     topTracks = {}
     for userTracks in usersTracks
-      for track, count of userTracks
-        topTracks[track] ?= 0
-        topTracks[track] += count
-    topTracks = _.sortBy _.pairs(topTracks), (pair) -> pair[1]
+      for track, listeners of userTracks
+        topTracks[track] ?= []
+        Array.prototype.push.apply topTracks[track], listeners
+    topTracks = _.sortBy _.pairs(topTracks), (pair) -> pair[1].length
     topTracks.reverse()[0...nbrOfTracks]
 
 
