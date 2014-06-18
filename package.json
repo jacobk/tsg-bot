@@ -23,7 +23,8 @@
     "deferred": "~0.6.1",
     "underscore": "~1.4.3",
     "scoped-http-client": "0.9.8",
-    "github": "0.1.14"
+    "github": "0.1.14",
+    "hubot-hipchat": "^2.6.4-2"
   },
   "engines": {
     "node": "0.8.x",

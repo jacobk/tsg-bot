@@ -1,1 +1,1 @@
-web: bin/hubot -a irc sirci
+web: bin/hubot --adapter hipchat q
