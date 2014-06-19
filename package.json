@@ -23,7 +23,10 @@
     "underscore": "~1.4.3",
     "scoped-http-client": "0.9.8",
     "github": "0.1.14",
-    "hubot-hipchat": "~2.6.4-2"
+    "hubot-hipchat": "~2.6.4-2",
+    "node-hipchat": "~0.4.5",
+    "spotify-web-api-node": "0.0.7",
+    "lodash": "~2.4.1"
   },
   "engines": {
     "node": "0.8.x",
