@@ -1,8 +1,6 @@
 [
-    "tweet.coffee",
     "shipit.coffee",
     "uptime.coffee",
-    "tweet-content.coffee",
     "heroku-status.coffee",
     "redis-brain.coffee"
 ]
