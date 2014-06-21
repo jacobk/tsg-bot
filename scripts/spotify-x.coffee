@@ -67,6 +67,13 @@ module.exports = (robot) ->
     name: track
     artists: [name: artist]
 
+  aggregateTopTracks = (topTrack) ->
+    histogram = {}
+    for listener in topTrack[1]
+      histogram[listener] ?= 0
+      histogram[listener] += 1
+    histogram
+
   robot.hear spotify.link, (msg) ->
     type = msg.match[1]
     id = msg.match[2]
@@ -154,7 +161,13 @@ module.exports = (robot) ->
     period ?= "now"
 
     formatter = (topTracks) ->
-      ("##{idx+1}(#{track[1].length})> #{track[0]}" for track,idx in topTracks).join(" -- ")
+      lines = for track,idx in topTracks
+        listeners = aggregateTopTracks track
+        pieces = ("#{user}<i>(#{count})</i>" for user, count of listeners)
+        "<li><b>#{track[0]}</b> [#{track[1].length}] #{pieces.join(", ")}</li>"
+
+      "<ol>#{lines.join("")}</ol>"
+      # ("##{idx+1}(#{track[1].length})> #{track[0]}" for track,idx in topTracks).join(" -- ")
 
     saveTopTracks = (topTracks) ->
       robot.brain.data.lastTopTracks = topTracks
@@ -162,11 +175,11 @@ module.exports = (robot) ->
     if period is "now"
       last_fm.getGroupRecentTracks(nbrOfTracks, groupByArtist).then (topTracks) ->
         saveTopTracks(topTracks)
-        msg.reply formatter(topTracks)
+        hipchat.postMessage hc_params('last.fm', formatter(topTracks)), msg
     else
       last_fm.getTopTracks(nbrOfTracks, period, groupByArtist).then (topTracks) ->
-        msg.reply formatter(topTracks)
         saveTopTracks(topTracks)
+        hipchat.postMessage hc_params('last.fm', formatter(topTracks)), msg
 
   robot.respond /lastfm who\s?(?:is)? #?(\d+)/i, (msg) ->
     tracks = robot.brain.data.lastTopTracks

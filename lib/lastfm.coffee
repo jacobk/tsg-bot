@@ -1,4 +1,5 @@
 deferred = require "deferred"
+moment = require "moment"
 
 class LastFm
 
