@@ -27,7 +27,7 @@ module.exports = (robot) ->
   robot.brain.on "loaded", ->
     robot.brain.data.strava ?=
       lastActivityId: 0
-    poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot)
+    poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot, hipchat)
     setInterval =>
       poller.poll()
     , strava_poll_freq
@@ -36,11 +36,12 @@ module.exports = (robot) ->
 # Assume monotonically increasing strava activity ids
 class StravaClubPoller
 
-  constructor: (clubId, accessToken, room, robot) ->
+  constructor: (clubId, accessToken, room, robot, hipchat) ->
     @clubId      = clubId
     @accessToken = accessToken
     @room        = room
     @robot       = robot
+    @hipchat     = hipchat
     @buildClient()
     @bitlyClient = new BitlyClient(bitly_access_token)
 
@@ -80,7 +81,7 @@ class StravaClubPoller
         format: 'html'
         color: 'yellow'
         message: @formatActivity(activity, shortUrl)
-      hipchat.postMessage params
+      @hipchat.postMessage params
 
   formatActivity: (activity, shortUrl) ->
     athlete = activity.athlete
