@@ -11,6 +11,8 @@ _ = require "underscore"
 scopedClient = require 'scoped-http-client'
 moment = require "moment"
 
+Hipchat = require('../lib/hipchat')
+
 strava_access_token  = process.env.STRAVA_ACCESS_TOKEN
 strava_club_id       = process.env.STRAVA_CLUB_ID
 strava_announce_room = process.env.STRAVA_ROOM || "#tsg"
@@ -18,6 +20,9 @@ strava_poll_freq     = process.env.STRAVA_POLL_RATE || 60000
 bitly_access_token   = process.env.BITLY_ACCESS_TOKEN
 
 module.exports = (robot) ->
+
+  hipchat = new Hipchat(robot)
+
 
   robot.brain.on "loaded", ->
     robot.brain.data.strava ?=
@@ -69,7 +74,13 @@ class StravaClubPoller
 
   announce: (activity) ->
     @bitlyClient.shorten @activityUrl(activity), (shortUrl) =>
-      @robot.messageRoom @room, @formatActivity(activity, shortUrl)
+      params =
+        room: @room
+        from: 'Strava'
+        format: 'html'
+        color: 'yellow'
+        message: @formatActivity(activity, shortUrl)
+      hipchat.postMessage params
 
   formatActivity: (activity, shortUrl) ->
     athlete = activity.athlete
@@ -83,9 +94,9 @@ class StravaClubPoller
     pace_secs = ((pace - pace_min) * 60).toFixed(0)
     pace_secs = "0#{pace_secs}" if pace_secs < 10
     pace = "#{pace_min}:#{pace_secs}"
-    "New strava activity \"#{activity.name}\": " +
-      "#{fullName} #{verb} #{distance} km in #{duration} (#{pace} min/km) " +
-      "near #{activity.location_city}, #{activity.location_state}, #{activity.location_country} #{shortUrl}"
+    "New activity \"#{activity.name}\": " +
+      "<b>#{fullName}</b> <i>#{verb}</i> <b>#{distance}</b> km in #{duration} <i>(#{pace} min/km)</i> " +
+      "near #{activity.location_city}, #{activity.location_country} #{shortUrl}"
 
   activityUrl: (activity) ->
     "http://www.strava.com/activities/#{activity.id}"
