@@ -2,7 +2,7 @@
     "shipit.coffee",
     "uptime.coffee",
     "heroku-status.coffee",
-    "redis-brain.coffee"
+    "redis-brain.coffee",
     "achievement_unlocked.coffee",
     "gob.coffee"
 ]
