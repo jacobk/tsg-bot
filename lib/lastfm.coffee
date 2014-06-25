@@ -17,20 +17,13 @@ class LastFm
     def = deferred()
     res = {}
     options = method: "#{type}.getInfo"
-
-    if type is "track"
-      options.artist = data.artists[0].name
-      options.track  = data.name
-    else if type is "album"
-      options.artist = data.artists[0].name
-      options.album  = data.name
-    else if type is "artist"
-      options.artist = data.name
+    @assignSpotifyData options, type, data
 
     @robot.logger.debug 'Getting lastfm play counts', type, format, JSON.stringify(options)
 
     counts = deferred.map @users, (user) =>
       @getPlayCount(type, options, user)
+
     counts.then(
       ((result) =>
         @robot.logger.debug 'Got playcounts', result
@@ -44,6 +37,24 @@ class LastFm
         console.log "ERR", err
       )
     )
+    def.promise
+
+  getTopTags: (type, data, format) ->
+    def = deferred()
+    res = {}
+    options = method: "#{type}.getTopTags"
+    @assignSpotifyData options, type, data
+
+    @robot.logger.debug 'Getting lastfm top tags', type, JSON.stringify(options)
+
+    @client.scope().query(options).get() (err, resp, body) =>
+      data = JSON.parse body
+      unless data.error
+        def.resolve (tag.name for tag in data.toptags.tag)
+      else
+        console.log "Last.fm failure", body
+        def.resolve new Error("Failed to get playcount")
+
     def.promise
 
   getLatestTrack: (user) ->
@@ -82,9 +93,13 @@ class LastFm
       data = JSON.parse body
       unless data.error
         if type == "artist"
-          def.resolve {user: user, count: data[type].stats.userplaycount}
+          def.resolve
+            user: user
+            count: data[type].stats.userplaycount
         else
-          def.resolve {user: user, count: data[type].userplaycount}
+          def.resolve
+            user: user
+            count: data[type].userplaycount
       else
         console.log "Last.fm failure", body
         def.resolve new Error("Failed to get playcount")
@@ -212,6 +227,16 @@ class LastFm
       api_key: @key
       format: "json"
     @client = @robot.http(LastFm.BASE_URL).query(options)
+
+  assignSpotifyData: (options, type, data) ->
+    if type is "track"
+      options.artist = data.artists[0].name
+      options.track  = data.name
+    else if type is "album"
+      options.artist = data.artists[0].name
+      options.album  = data.name
+    else if type is "artist"
+      options.artist = data.name
 
   formats:
     html:

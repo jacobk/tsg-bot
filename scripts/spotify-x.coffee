@@ -21,7 +21,6 @@ moment = require "moment"
 querystring = require('querystring')
 deferred = require "deferred"
 
-
 LastFm = require('../lib/lastfm')
 Spotify = require('../lib/spotify')
 Hipchat = require('../lib/hipchat')
@@ -53,14 +52,22 @@ module.exports = (robot) ->
       def.resolve listeners
     def.promise
 
-  show_spotify_info = (msg, artist, track) ->
+  show_spotify_info = (msg, data) ->
     def = deferred()
-    spotify.search(artist, track, format).then (res) ->
+    spotify.search(data, format).then (res) ->
       message = "<i>No spotify info</i>"
       if res.data
         message = res.formatted
       hipchat.postMessage hc_params('Spotify', message), msg
       def.resolve listeners
+    def.promise
+
+  show_lastfm_info = (msg, type, data) ->
+    def = deferred()
+    last_fm.getTopTags(type, data, format).then (res) ->
+      message = "Tags: <i>#{res[0..5].join(", ")}</i>"
+      hipchat.postMessage hc_params('last.fm', message), msg
+      def.resolve true
     def.promise
 
   spotifake = (artist, track) ->
@@ -81,7 +88,10 @@ module.exports = (robot) ->
       return
     spotify.lookup(type, id, format).then (res) ->
       hipchat.postMessage hc_params('Spotify', res.formatted), msg
+      if type is "track"
+        show_spotify_info msg, res.data
       show_listeners msg, type, res.data
+      show_lastfm_info msg, type, res.data
 
   # Totally hacked together support for SoundCloud URLs
   robot.hear soundcloud.link, (msg) ->
@@ -136,7 +146,8 @@ module.exports = (robot) ->
         since  = moment.unix(scrobble.last.ts).fromNow()
         message = "#{alias} listened to <b>#{artist} - #{track}</b> <i>(#{since})</i>"
         hipchat.postMessage hc_params('last.fm', message), msg
-        show_spotify_info msg, artist, track
+        show_spotify_info msg, spotifake(artist, track)
+        show_lastfm_info msg, "track", spotifake(artist, track), format
         show_listeners msg, "track", spotifake(artist, track), format
 
   robot.respond /lastfm np (\S+)/i, (msg) ->
@@ -148,7 +159,8 @@ module.exports = (robot) ->
           track  = scrobble.np.track
           message = "Track: <b>#{artist} - #{track}</b>"
           hipchat.postMessage hc_params('last.fm', message), msg
-          show_spotify_info msg, artist, track
+          show_spotify_info msg, spotifake(artist, track)
+          show_lastfm_info msg, "track", spotifake(artist, track), format
           show_listeners msg, "track", spotifake(artist, track), format
         else
           message = "<i>#{alias} enjoys the silence...</i>"
