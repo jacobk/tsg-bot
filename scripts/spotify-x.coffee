@@ -21,13 +21,13 @@ moment = require "moment"
 querystring = require('querystring')
 deferred = require "deferred"
 
+
 LastFm = require('../lib/lastfm')
 Spotify = require('../lib/spotify')
 Hipchat = require('../lib/hipchat')
 
 lastfm_key    = process.env.LAST_FM_KEY
 lastfm_groups = process.env.LAST_FM_GROUPS || "tsg"
-hipchat_key = process.env.HIPCHAT_API_KEY
 soundcloud_client_id = process.env.SOUNDCLOUD_CLIENT_ID
 
 format = 'html'
@@ -36,7 +36,7 @@ module.exports = (robot) ->
 
   last_fm = new LastFm(lastfm_key, lastfm_groups, robot)
   spotify = new Spotify()
-  hipchat = new Hipchat(robot, hipchat_key)
+  hipchat = new Hipchat(robot)
 
   hc_params = (from, message) ->
     from: from
@@ -52,22 +52,14 @@ module.exports = (robot) ->
       def.resolve listeners
     def.promise
 
-  show_spotify_info = (msg, data) ->
+  show_spotify_info = (msg, artist, track) ->
     def = deferred()
-    spotify.search(data, format).then (res) ->
+    spotify.search(artist, track, format).then (res) ->
       message = "<i>No spotify info</i>"
       if res.data
         message = res.formatted
       hipchat.postMessage hc_params('Spotify', message), msg
       def.resolve listeners
-    def.promise
-
-  show_lastfm_info = (msg, type, data) ->
-    def = deferred()
-    last_fm.getTopTags(type, data, format).then (res) ->
-      message = "Tags: <i>#{res[0..5].join(", ")}</i>"
-      hipchat.postMessage hc_params('last.fm', message), msg
-      def.resolve true
     def.promise
 
   spotifake = (artist, track) ->
@@ -88,10 +80,7 @@ module.exports = (robot) ->
       return
     spotify.lookup(type, id, format).then (res) ->
       hipchat.postMessage hc_params('Spotify', res.formatted), msg
-      if type is "track"
-        show_spotify_info msg, res.data
       show_listeners msg, type, res.data
-      show_lastfm_info msg, type, res.data
 
   # Totally hacked together support for SoundCloud URLs
   robot.hear soundcloud.link, (msg) ->
@@ -146,8 +135,7 @@ module.exports = (robot) ->
         since  = moment.unix(scrobble.last.ts).fromNow()
         message = "#{alias} listened to <b>#{artist} - #{track}</b> <i>(#{since})</i>"
         hipchat.postMessage hc_params('last.fm', message), msg
-        show_spotify_info msg, spotifake(artist, track)
-        show_lastfm_info msg, "track", spotifake(artist, track), format
+        show_spotify_info msg, artist, track
         show_listeners msg, "track", spotifake(artist, track), format
 
   robot.respond /lastfm np (\S+)/i, (msg) ->
@@ -159,8 +147,7 @@ module.exports = (robot) ->
           track  = scrobble.np.track
           message = "Track: <b>#{artist} - #{track}</b>"
           hipchat.postMessage hc_params('last.fm', message), msg
-          show_spotify_info msg, spotifake(artist, track)
-          show_lastfm_info msg, "track", spotifake(artist, track), format
+          show_spotify_info msg, artist, track
           show_listeners msg, "track", spotifake(artist, track), format
         else
           message = "<i>#{alias} enjoys the silence...</i>"
@@ -222,18 +209,18 @@ module.exports = (robot) ->
 
   robot.router.get '/hubot/spotify/listeners', (req, res) ->
     query = querystring.parse(req._parsedUrl.query)
-    href = query.href
-    robot.http(spotify.uri href).get() (err, resp, body) ->
-      data = JSON.parse(body)
-      track = spotify[data.info.type](data)
-      type = data.info.type
+    match = query.href.match(spotify.link)
+    type = match[1]
+    id = match[2]
+    spotify.lookup(type, id, format).then (spotifyRes) ->
       if type in ["track", "album", "artist"]
-        last_fm.getPlayCounts(type, data).then (listeners) ->
-          response =
-            track: track,
-            listeners: listeners
-          res.setHeader 'Content-Type', 'application/json'
-          res.end JSON.stringify(response)
+        last_fm.getPlayCounts(type, spotifyRes.data, format).then (listeners) ->
+          if listeners.listeners
+            response =
+              track: spotifyRes.data,
+              listeners: listeners.listeners
+            res.setHeader 'Content-Type', 'application/json'
+            res.end JSON.stringify(response)
 
 
 soundcloud =
