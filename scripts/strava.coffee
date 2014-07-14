@@ -53,6 +53,12 @@ module.exports = (robot) ->
     auth.requestToken(state, code)
       .then (athlete) ->
         res.end "Created token"
+        hipchat.postMessage
+          room: strava_announce_room
+          from: 'Strava'
+          format: 'html'
+          color: 'yellow'
+          message: "Access token added for <b>#{athlete.firstname} #{athlete.lastname}</b>"
       .catch (reason) ->
         res.end "Failed to create token #{JSON.stringify reason}"
 
@@ -97,7 +103,7 @@ class Auth
           else
             {access_token, athlete} = JSON.parse body
             @robot.logger.debug "Got token data: #{body}"
-            @robot.logger.info "Created token for #{athlete.firstname}"
+            @robot.logger.info "Created token for #{athlete.firstname} #{athlete.lastname}"
             @storeToken access_token, athlete
             resolve athlete
 
