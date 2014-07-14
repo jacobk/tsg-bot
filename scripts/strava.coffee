@@ -25,7 +25,7 @@ strava_client_secret = process.env.STRAVA_CLIENT_SECRET
 strava_club_id       = process.env.STRAVA_CLUB_ID
 strava_announce_room = process.env.STRAVA_ROOM || "#tsg"
 strava_poll_freq     = process.env.STRAVA_POLL_RATE || 60000
-strava_callback_url  = process.env.STRAVA_CALLBACK_URL || "http://tsg.herokuapp.com/strava/token_exchange"
+strava_callback_url  = process.env.STRAVA_CALLBACK_URL || "http://tsg.herokuapp.com/hubot/strava/token_exchange"
 bitly_access_token   = process.env.BITLY_ACCESS_TOKEN
 
 STRAVA_EVT_TOKEN = "strava:tokenCreated"
