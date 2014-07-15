@@ -183,11 +183,11 @@ class Activity
   formatHTML: ->
     return 'N/A' unless @hasData()
     message = "New activity <a href='#{@url()}'>\"#{@data.name}\"</a>:
-      <b>#{@fullName()}</b>
-      <i>#{@_verb()}</i>
-      <b>#{@distance()}</b> km in #{@duration()}
-      <i>(#{@_velocityString()}, #{@elevationGain()} m, #{@avgHeartrate()} bpm)</i>
-      near #{@data.location_city}"
+<b>#{@fullName()}</b>
+<i>#{@_verb()}</i>
+<b>#{@distance()}</b> km in #{@duration()}
+<i>(#{@_velocityString()}, #{@elevationGain()} m, #{@avgHeartrate()} bpm)</i>
+near #{@data.location_city}"
     message += @formatStreamsHTML() if @hasStreams()
     message
 
