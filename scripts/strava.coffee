@@ -3,6 +3,7 @@
 #
 # Commands:
 #   strava auth - Authorizes bot to access strava activity details
+#   strava show <athlete id> <activity id> - Show info for provided activity
 #
 # Author:
 #   jacobk
@@ -92,7 +93,8 @@ module.exports = (robot) ->
 
   robot.on STRAVA_EVT_NOTOKEN, (athleteId, activityId) ->
     message = "Athlete hasn't authorized me to show more details :( " +
-              "Tell hen to click #{auth.authorizeUrl(activityId)}"
+              "Tell hen to click <a href='#{auth.authorizeUrl(activityId)}'>" +
+              "this link</a>"
     sendDelayed message
 
   robot.on STRAVA_EVT_NEWTOKEN, (token, athlete) ->
