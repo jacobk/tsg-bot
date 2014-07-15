@@ -44,13 +44,16 @@ module.exports = (robot) ->
       poller.poll()
     , strava_poll_freq
 
+  # auth <athlete id>
+  robot.respond /strava auth/i, (msg) ->
+    msg.send "Click this link:  #{auth.authorizeUrl()}"
+
   robot.router.get '/hubot/strava/token_exchange', (req, res) ->
-    # state is ahtleteId
-    {state, code} = querystring.parse(req._parsedUrl.query)
-    robot.logger.debug "Got authorization from #{state} code #{code}"
+    {code} = querystring.parse(req._parsedUrl.query)
+    robot.logger.debug "Got authorization from  with code #{code}"
 
     res.setHeader 'Content-Type', 'text/html'
-    auth.requestToken(state, code)
+    auth.requestToken(code)
       .then (athlete) ->
         res.end "Created token"
         hipchat.postMessage
@@ -62,31 +65,21 @@ module.exports = (robot) ->
       .catch (reason) ->
         res.end "Failed to create token #{JSON.stringify reason}"
 
-  # auth <athlete id>
-  robot.respond /strava auth (\S+)/i, (msg) ->
-    athleteId = msg.match[1]
-    msg.reply auth.authorizeUrl athleteId
 
 
 class Auth
 
   constructor: (@clientId, @clientSecret, @callbackUrl, @robot) ->
 
-  # TODO
-  verifyAtheleteId: (athleteId) ->
-    # Accept all ids for now
-    new RSVP.resolve()
-
-  authorizeUrl: (athleteId) ->
+  authorizeUrl: () ->
     "https://www.strava.com/oauth/authorize?"+
       "client_id=#{@clientId}"+
       "&response_type=code"+
       "&redirect_uri=#{ encodeURIComponent @callbackUrl }"+
-      "&state=#{ athleteId }"+
       "&approval_prompt=auto"
 
-  requestToken: (athleteId, code) ->
-    @robot.logger.debug "Requesting token #{athleteId} #{code}"
+  requestToken: (code) ->
+    @robot.logger.debug "Requesting token #{code}"
     new RSVP.Promise (resolve, reject) =>
       request {
         method: "POST"
