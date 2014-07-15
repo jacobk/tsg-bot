@@ -106,13 +106,13 @@ module.exports = (robot) ->
   # TRIGGERS
   #
 
-  # robot.hear /strava fake( \d+)?/, (msg) ->
-  #   url = "https://www.strava.com/api/v3/clubs/#{strava_club_id}/activities?access_token=#{strava_access_token}&per_page=20"
-  #   idx = parseInt((msg.match[1] || 0), 10)
-  #   request url, (err, res, body) =>
-  #     data = JSON.parse(body)
-  #     console.dir _.map data, (a) -> a.athlete.id
-  #     robot.emit STRAVA_EVT_NEWACTIVITY, data[idx]
+  robot.hear /strava fake( \d+)?/, (msg) ->
+    url = "https://www.strava.com/api/v3/clubs/#{strava_club_id}/activities?access_token=#{strava_access_token}&per_page=20"
+    idx = parseInt((msg.match[1] || 0), 10)
+    request url, (err, res, body) =>
+      data = JSON.parse(body)
+      console.dir _.map data, (a) -> a.athlete.id
+      robot.emit STRAVA_EVT_NEWACTIVITY, data[idx]
 
   robot.respond /strava auth/i, (msg) ->
     msg.send "Click this link:  #{auth.authorizeUrl()}"
