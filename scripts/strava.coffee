@@ -134,8 +134,8 @@ module.exports = (robot) ->
         # after a failed attempt to show an activity with full details.
         if state
           process.nextTick ->
-            api.activity(athlete.id, state).then (activity) ->
-              robot.emit STRAVA_EVT_NEWACTIVITY, activity
+            activity = new Activity athlete.id, state, api, robot
+            robot.emit STRAVA_EVT_NEWACTIVITY, activity
         res.end "Created token"
       .catch (reason) ->
         res.end "Failed to create token #{JSON.stringify reason}"
@@ -150,7 +150,7 @@ class NoTokenError extends Error
 
 class Activity
   constructor: (@athleteId, @activityId, @api, @robot, @data) ->
-    @athlete = @data.athlete if @data?.athlete?
+    @athlete = @data.athlete if @data?.athlete?.resource_state > 1
 
   @createFromData: (data, api, robot) ->
     new Activity data.athlete.id, data.id, api, robot, data
