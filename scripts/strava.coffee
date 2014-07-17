@@ -337,8 +337,8 @@ class Store
     @robot.brain.data.strava.athletes[athlete.id] =
       token: token
       details: athlete
-    @robot.emit STRAVA_EVT_NEWTOKEN, token, athlete
     @robot.brain.save()
+    @robot.emit STRAVA_EVT_NEWTOKEN, token, athlete
 
   loadToken: (athleteId) ->
     @robot.logger.info "Loading token for #{athleteId}"
@@ -478,9 +478,13 @@ class StravaClubPoller
   poll: ->
     @robot.logger.debug "Polling Strava.com"
     @client.get() (err, resp, body) =>
-      @robot.logger.error "Failed to poll Strava.com" unless resp.statusCode is 200
-      data = JSON.parse(body)
-      @handleStravaResponse data
+      resp.statusCode is 200
+        data = JSON.parse(body)
+        @handleStravaResponse data
+      else
+        @robot.logger.error "Failed to poll Strava.com:
+                              status: #{resp.statusCode}
+                              body: #{body}"
 
   handleStravaResponse: (data) ->
     newActivities = @findNewActivities data
