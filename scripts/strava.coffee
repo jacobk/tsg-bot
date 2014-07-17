@@ -210,7 +210,7 @@ class Activity
           <th>Min</th>
           <th>Q1</th>
           <th>Median</th>
-          <th>Q4</th>
+          <th>Q3</th>
           <th>Max</th>
         </tr>
       </thead>
