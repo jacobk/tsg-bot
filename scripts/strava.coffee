@@ -73,6 +73,7 @@ module.exports = (robot) ->
   #
 
   robot.brain.on "loaded", ->
+    robot.logger.info "Initiating Strava.com poller"
     robot.brain.data.strava ?=
       lastActivityId: 0
       athletes: {}
@@ -478,7 +479,7 @@ class StravaClubPoller
   poll: ->
     @robot.logger.debug "Polling Strava.com"
     @client.get() (err, resp, body) =>
-      resp.statusCode is 200
+      if resp.statusCode is 200
         data = JSON.parse(body)
         @handleStravaResponse data
       else
