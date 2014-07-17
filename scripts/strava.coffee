@@ -86,8 +86,8 @@ module.exports = (robot) ->
   # STRAVA SPECIFIC EVENT HANDLING
   #
 
-  robot.on STRAVA_EVT_NEWACTIVITY, (activity) ->
-    activity = Activity.createFromData activity, api, robot
+  robot.on STRAVA_EVT_NEWACTIVITY, (activityData) ->
+    activity = Activity.createFromData activityData, api, robot
     robot.logger.info "Handling new activity event. #{activity}"
     activity.load().then(announceActivity, announceActivity).catch (reason) ->
       robot.logger.error "Faliled to handle new activity", reason.stack
@@ -134,9 +134,8 @@ module.exports = (robot) ->
         # state (state = activityId) is available if the auth seq was initiated
         # after a failed attempt to show an activity with full details.
         if state
-          process.nextTick ->
-            activity = new Activity athlete.id, state, api, robot
-            robot.emit STRAVA_EVT_NEWACTIVITY, activity
+          api.activity(athlete.id, state).then (activity) ->
+            robot.emit STRAVA_EVT_NEWACTIVITY, activity.data
         res.end "Created token"
       .catch (reason) ->
         res.end "Failed to create token #{JSON.stringify reason}"
