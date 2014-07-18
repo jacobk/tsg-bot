@@ -48,6 +48,7 @@ module.exports = (robot) ->
   store = new Store(robot)
   api = new APIv3(strava_client_id, strava_client_secret, store, robot)
   auth = new Auth(strava_callback_url, api, store, robot)
+  poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot, hipchat)
 
 
   # HELPERS
@@ -77,7 +78,6 @@ module.exports = (robot) ->
     robot.brain.data.strava ?=
       lastActivityId: 0
       athletes: {}
-    poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot, hipchat)
     setInterval =>
       poller.poll()
     , strava_poll_freq
@@ -86,11 +86,27 @@ module.exports = (robot) ->
   # STRAVA SPECIFIC EVENT HANDLING
   #
 
-  robot.on STRAVA_EVT_NEWACTIVITY, (activityData) ->
+  robot.on STRAVA_EVT_NEWACTIVITY, (activityData, additionalActivites=[]) ->
     activity = Activity.createFromData activityData, api, robot
     robot.logger.info "Handling new activity event. #{activity}"
-    activity.load().then(announceActivity, announceActivity).catch (reason) ->
-      robot.logger.error "Faliled to handle new activity", reason.stack
+    activity.load()
+      .then(announceActivity, announceActivity)
+      .then ->
+        unless _.isEmpty additionalActivites
+          additionalAthletes = _.chain(additionalActivites)
+            .map (ad) ->
+              Activity.createFromData(ad, api, robot).fullName()
+            .uniq()
+            .join(", ")
+            .value()
+
+          send """Found #{additionalActivites.length} additional activites
+               from <i>#{additionalAthletes}</i>
+               check them out at
+               <a href='http://www.strava.com/clubs/#{strava_club_id}/recent_activity'>
+               the club page</a>"""
+      .catch (reason) ->
+        robot.logger.error "Faliled to handle new activity", reason.stack
 
   robot.on STRAVA_EVT_NOTOKEN, (athleteId, activityId) ->
     message = "Athlete hasn't authorized me to show more details :( " +
@@ -106,6 +122,14 @@ module.exports = (robot) ->
 
   # TRIGGERS
   #
+
+  robot.hear /strava cursor (\d+)/, (msg) ->
+    cursor = msg.match[1]
+    poller.setCursor cursor
+
+  robot.hear /strava token clear (\d+)/, (msg) ->
+    athleteId = msg.match[1]
+    store.deleteToken athleteId
 
   robot.hear /strava fake( \d+)?/, (msg) ->
     url = "https://www.strava.com/api/v3/clubs/#{strava_club_id}/activities?access_token=#{strava_access_token}&per_page=20"
@@ -134,8 +158,12 @@ module.exports = (robot) ->
         # state (state = activityId) is available if the auth seq was initiated
         # after a failed attempt to show an activity with full details.
         if state
+          robot.logger.debug "Token exchange state found #{state} will pair " +
+                             "with athlete #{JSON.stringify athlete}"
           api.activity(athlete.id, state).then (activity) ->
-            robot.emit STRAVA_EVT_NEWACTIVITY, activity.data
+            robot.logger.debug "State triggered activity loaded #{activity} " +
+                               "Will emit STRAVA_EVT_NEWACTIVITY event."
+            robot.emit STRAVA_EVT_NEWACTIVITY, activity
         res.end "Created token"
       .catch (reason) ->
         res.end "Failed to create token #{JSON.stringify reason}"
@@ -340,6 +368,11 @@ class Store
     @robot.brain.save()
     @robot.emit STRAVA_EVT_NEWTOKEN, token, athlete
 
+  deleteToken: (athleteId) ->
+    @robot.logger.debug  "Deleting strava token for #{athleteId}"
+    delete @robot.brain.data.strava.athletes[athleteId]
+    @robot.brain.save()
+
   loadToken: (athleteId) ->
     @robot.logger.info "Loading token for #{athleteId}"
     athlete = @robot.brain.data.strava.athletes[athleteId]
@@ -489,9 +522,8 @@ class StravaClubPoller
   handleStravaResponse: (data) ->
     newActivities = @findNewActivities data
     unless _.isEmpty(newActivities)
-      for activity in newActivities
-        @robot.emit STRAVA_EVT_NEWACTIVITY, activity
-        # @announce activity
+      [first, rest...] = newActivities
+      @robot.emit STRAVA_EVT_NEWACTIVITY, first, rest
       @updateCursor newActivities
     else
       @robot.logger.debug "No new Strava activities"
@@ -505,6 +537,9 @@ class StravaClubPoller
 
   updateCursor: (activities) ->
     newCursor = _.first(activities).id
+    @setCursor newCursor
+
+  setCursor: (newCursor) ->
     @robot.logger.debug "Updating cursor. New cursor: #{newCursor}"
     @robot.brain.data.strava.lastActivityId = newCursor
     @robot.brain.save()
