@@ -50,7 +50,7 @@ class LastFm
     @client.scope().query(options).get() (err, resp, body) =>
       data = JSON.parse body
       unless data.error
-        def.resolve (tag.name for tag in data.toptags.tag)
+        def.resolve (tag.name for tag in data?.toptags?.tag or [])
       else
         console.log "Last.fm failure", body
         def.resolve new Error("Failed to get playcount")
