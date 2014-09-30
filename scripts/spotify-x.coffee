@@ -220,6 +220,14 @@ module.exports = (robot) ->
     res.setHeader 'Content-Type', 'text/html'
     res.end listenersApp()
 
+  robot.router.get '/hubot/spotify/play', (req, res) ->
+    urlencode = require 'urlencode';
+    query = querystring.parse(req._parsedUrl.query)
+    uri = urlencode(query.uri)
+    body = "<iframe src='https://embed.spotify.com/?uri=#{uri}' width='300' height='380' frameborder='0' allowtransparency='true'></iframe>"
+    res.setHeader 'Content-Type', 'text/html'
+    res.end body
+
   robot.router.get '/hubot/spotify/listeners', (req, res) ->
     query = querystring.parse(req._parsedUrl.query)
     href = query.href

@@ -30,7 +30,8 @@
     "rsvp": "~3.0.9",
     "request": "~2.37.0",
     "simple-statistics": "~0.8.1",
-    "sprintf-js": "0.0.7"
+    "sprintf-js": "0.0.7",
+    "urlencode": "0.2.0"
   },
   "engines": {
     "node": "0.8.x",
