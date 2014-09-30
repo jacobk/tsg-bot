@@ -20,6 +20,7 @@
 moment = require "moment"
 querystring = require('querystring')
 deferred = require "deferred"
+_ = require "lodash"
 
 LastFm = require('../lib/lastfm')
 Spotify = require('../lib/spotify')

@@ -1,5 +1,6 @@
 deferred = require "deferred"
 moment = require "moment"
+_ = require "lodash"
 
 class LastFm
 
