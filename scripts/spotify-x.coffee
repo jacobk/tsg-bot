@@ -30,13 +30,18 @@ lastfm_key    = process.env.LAST_FM_KEY
 lastfm_groups = process.env.LAST_FM_GROUPS || "tsg"
 hipchat_key = process.env.HIPCHAT_API_KEY
 soundcloud_client_id = process.env.SOUNDCLOUD_CLIENT_ID
+spotify_playlist_user = process.env.SPOTIFY_PLAYLIST_USER
+spotify_playlist_id = process.env.SPOTIFY_PLAYLIST_ID
+spotify_client_id = process.env.SPOTIFY_CLIENT_ID
+spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET
+spotify_refresh_token = process.env.SPOTIFY_REFRESH_TOKEN
 
 format = 'html'
 
 module.exports = (robot) ->
 
   last_fm = new LastFm(lastfm_key, lastfm_groups, robot)
-  spotify = new Spotify()
+  spotify = new Spotify(spotify_client_id, spotify_client_secret, spotify_refresh_token);
   hipchat = new Hipchat(robot, hipchat_key)
 
   hc_params = (from, message) ->
@@ -59,6 +64,8 @@ module.exports = (robot) ->
       message = "<i>No spotify info</i>"
       if res.data
         message = res.formatted
+        spotify.addToPlaylist(spotify_playlist_user, spotify_playlist_id,
+          res.data.uri);
       hipchat.postMessage hc_params('Spotify', message), msg
       def.resolve listeners
     def.promise
@@ -116,6 +123,9 @@ module.exports = (robot) ->
               message = "Track: <b>#{artist} - #{track}</b>"
               hipchat.postMessage hc_params('Soundcloud', message), msg
               show_listeners msg, "track", spotifake(artist, track), format
+
+  robot.respond /(spotify )?playlist/i, (msg) ->
+    msg.reply "spotify:user:#{spotify_playlist_user}:playlist:#{spotify_playlist_id}"
 
   robot.respond /lastfm alias (\S+) (\S+)/i, (msg) ->
     lastfm      = robot.brain.data.lastfm ?= {}
