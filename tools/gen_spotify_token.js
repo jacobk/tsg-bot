@@ -1,5 +1,5 @@
 // Usage:
-// node gen_spotify_grant.js --ngrok <url> --id <client id> --secret <client secret>
+// node gen_spotify_grant.js --ngrok <url> --id <client id> --secret <client secret> --code <grant code>
 
 var argv = require('minimist')(process.argv.slice(2));
 
