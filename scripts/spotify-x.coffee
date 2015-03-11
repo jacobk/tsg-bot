@@ -59,6 +59,9 @@ module.exports = (robot) ->
     def.promise
 
   show_spotify_info = (msg, data) ->
+    robot.logger.debug "Showing spotify info"
+    robot.logger.debug "msg:  #{JSON.stringify(msg, null, 2)}"
+    robot.logger.debug "data: #{JSON.stringify(data, null, 2)}"
     def = deferred()
     spotify.search(data, format).then (res) ->
       message = "<i>No spotify info</i>"
