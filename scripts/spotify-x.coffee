@@ -65,8 +65,8 @@ module.exports = (robot) ->
       message = "<i>No spotify info</i>"
       if res.data
         message = res.formatted
-        spotify.addToPlaylist(spotify_playlist_user, spotify_playlist_id,
-          res.data.uri);
+        # spotify.addToPlaylist(spotify_playlist_user, spotify_playlist_id,
+        #   res.data.uri);
       hipchat.postMessage hc_params('Spotify', message), msg
       def.resolve listeners
     def.promise
