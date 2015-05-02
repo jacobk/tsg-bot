@@ -74,8 +74,8 @@ module.exports = (robot) ->
   #
 
   robot.brain.on "loaded", ->
-    robot.logger.info "Initiating Strava.com poller"
-    robot.logger.debug JSON.stringify(robot.brain.data, null, 2)
+    robot.logger.debug "Initiating Strava.com poller"
+    robot.logger.debug JSON.stringify(robot.brain.data)
     robot.brain.data.strava ?=
       lastActivityId: 0
       athletes: {}
