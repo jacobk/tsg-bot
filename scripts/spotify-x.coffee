@@ -100,7 +100,7 @@ module.exports = (robot) ->
       if type is "track"
         show_spotify_info msg, res.data
       show_listeners msg, type, res.data
-      show_lastfm_info msg, type, res.data
+      # show_lastfm_info msg, type, res.data
 
   # Totally hacked together support for SoundCloud URLs
   robot.hear soundcloud.link, (msg) ->
@@ -159,7 +159,7 @@ module.exports = (robot) ->
         message = "#{alias} listened to <b>#{artist} - #{track}</b> <i>(#{since})</i>"
         hipchat.postMessage hc_params('last.fm', message), msg
         show_spotify_info msg, spotifake(artist, track)
-        show_lastfm_info msg, "track", spotifake(artist, track), format
+        # show_lastfm_info msg, "track", spotifake(artist, track), format
         show_listeners msg, "track", spotifake(artist, track), format
 
   robot.respond /lastfm np (\S+)/i, (msg) ->
@@ -172,7 +172,7 @@ module.exports = (robot) ->
           message = "Track: <b>#{artist} - #{track}</b>"
           hipchat.postMessage hc_params('last.fm', message), msg
           show_spotify_info msg, spotifake(artist, track)
-          show_lastfm_info msg, "track", spotifake(artist, track), format
+          # show_lastfm_info msg, "track", spotifake(artist, track), format
           show_listeners msg, "track", spotifake(artist, track), format
         else
           message = "<i>#{alias} enjoys the silence...</i>"
