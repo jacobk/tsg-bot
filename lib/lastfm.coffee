@@ -208,7 +208,7 @@ class LastFm
     if @isMember user
       cb(user)
     else
-      msg.reply "'#{nick}' not a valid last.fm user or alias"
+      msg.reply "not a valid last.fm user or alias"
 
   getAlias: (user) ->
     user
