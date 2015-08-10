@@ -150,7 +150,7 @@ module.exports = (robot) ->
     msg.reply "Last.fm aliases: #{aliases.join ', '}"
 
   robot.respond /lastfm (?:lp|last(?: played)?) (\S+)/i, (msg) ->
-    alias = msg.match[1]
+    alias = msg.match[1] or msg.message.mention_name
     last_fm.ifMember msg, alias, (nick) ->
       last_fm.getLatestTrack(nick).then (scrobble) ->
         artist = scrobble.last.artist
@@ -162,8 +162,8 @@ module.exports = (robot) ->
         # show_lastfm_info msg, "track", spotifake(artist, track), format
         show_listeners msg, "track", spotifake(artist, track), format
 
-  robot.respond /lastfm np (\S+)/i, (msg) ->
-    alias = msg.match[1]
+  show_np = (msg) ->
+    alias = msg.match[1] or msg.message.user.mention_name
     last_fm.ifMember msg, alias, (nick) ->
       last_fm.getLatestTrack(nick).then (scrobble) ->
         if scrobble.np
@@ -177,6 +177,12 @@ module.exports = (robot) ->
         else
           message = "<i>#{alias} enjoys the silence...</i>"
           hipchat.postMessage hc_params("last.fm", message), msg
+
+  robot.respond /lastfm np (\S+)/i, (msg) ->
+    show_np msg
+
+  robot.hear /^np/i, (msg) ->
+    show_np msg
 
   robot.respond /lastfm (\d+ )?trending ?(artists?|tracks?)? ?(?:this )?(now|week|month|year)?/i, (msg) ->
     nbrOfTracks = parseInt msg.match[1] ? 10, 10
