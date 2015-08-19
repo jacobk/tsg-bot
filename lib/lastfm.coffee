@@ -109,16 +109,21 @@ class LastFm
 
   getGroupMembers: (groups, callback) ->
     @robot.logger.info "Last.fm getting members for groups #{groups}"
-    members = {}
-    for group in groups
-      options =
-        method: "group.getmembers"
-        group: group
-      @client.scope().query(options).get() (err, resp, body) =>
-        data = JSON.parse(body)
-        for user in data.members.user
-          members[user.name] = true
-        callback(key for key, foo of members)
+    callback(["sris", "dawge", "inferno-", "aspartam", "tominator2",
+      "Lezlow", "schildmeijer", "key84"])
+
+    # Disabled until group-support returns
+    #
+    # members = {}
+    # for group in groups
+    #   options =
+    #     method: "group.getmembers"
+    #     group: group
+    #   @client.scope().query(options).get() (err, resp, body) =>
+    #     data = JSON.parse(body)
+    #     for user in data.members.user
+    #       members[user.name] = true
+    #     callback(key for key, foo of members)
 
   getGroupRecentTracks: (nbrOfTracks, groupByArtist=false) ->
     def = deferred()
