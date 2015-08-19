@@ -40,9 +40,14 @@ format = 'html'
 
 module.exports = (robot) ->
 
-  last_fm = new LastFm(lastfm_key, lastfm_groups, robot)
-  spotify = new Spotify(spotify_client_id, spotify_client_secret, spotify_refresh_token);
-  hipchat = new Hipchat(robot, hipchat_key)
+  robot.brain.on "loaded", ->
+    last_fm = new LastFm(lastfm_key, lastfm_groups, robot)
+    spotify = new Spotify(spotify_client_id, spotify_client_secret, spotify_refresh_token);
+    hipchat = new Hipchat(robot, hipchat_key)
+
+  # last_fm = new LastFm(lastfm_key, lastfm_groups, robot)
+  # spotify = new Spotify(spotify_client_id, spotify_client_secret, spotify_refresh_token);
+  # hipchat = new Hipchat(robot, hipchat_key)
 
   hc_params = (from, message) ->
     from: from
