@@ -59,6 +59,7 @@ class LastFm
     def.promise
 
   getLatestTrack: (user) ->
+    @robot.logger.debug "Getting latest tracks for #{user}"
     def = deferred()
     options =
       method: "user.getrecenttracks"
@@ -67,15 +68,19 @@ class LastFm
       nowplaying: '"true"'
 
     @client.scope().query(options).get() (err, resp, body) =>
+      @robot.logger.debug "getLatestTrack repsonse: #{body}"
       data = JSON.parse body
       track = data.recenttracks.track
-      if _.isArray track
-        [np, last] = track
+      [np, last] = track
+
+      unless last
+        last = np
+        np = null
+
+      if np
         np =
           artist: np.artist["#text"]
           track: np.name
-      else
-        [np, last] = [null, track]
 
       def.resolve
         np: np
