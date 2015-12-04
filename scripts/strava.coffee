@@ -20,7 +20,8 @@ request = require "request"
 ss = require "simple-statistics"
 sprintf = require("sprintf-js").sprintf
 
-Hipchat = require('../lib/hipchat')
+# Hipchat = require('../lib/hipchat')
+Slack = require('../lib/slack')
 
 # CONFIGURATION
 #
@@ -44,30 +45,34 @@ STRAVA_EVT_NEWACTIVITY = "strava:newActivity"
 
 module.exports = (robot) ->
 
-  hipchat = new Hipchat(robot)
+  chatService = new Slack(robot)
   store = new Store(robot)
   api = new APIv3(strava_client_id, strava_client_secret, store, robot)
   auth = new Auth(strava_callback_url, api, store, robot)
-  poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot, hipchat)
+  poller = new StravaClubPoller(strava_club_id, strava_access_token, strava_announce_room, robot)
 
 
   # HELPERS
   #
 
-  hc_params = (message) ->
-    room: strava_announce_room
-    from: "Strava"
-    message: message
-    format: "html"
-    color: "yellow"
+  # params = (message) ->
+  #   channel: strava_announce_room
+  #   from: "Strava"
+  #   message: message
+  #   format: "html"
+  #   color: "yellow"
 
   send = (message) ->
-    hipchat.postMessage hc_params message
+    params = chatService.params('Strava', message)
+    params.channel = strava_announce_room
+    chatService.postMessage params
 
   sendDelayed = (message) ->
-    process.nextTick -> hipchat.postMessage hc_params message
+    process.nextTick -> send message
 
-  announceActivity = (activity) -> send activity.formatHTML()
+  announceActivity = (activity) ->
+    console.log('announceActivity', activity)
+    send activity.formatSlack()
 
 
   # GLOBAL EVENT HANDLING
@@ -102,22 +107,20 @@ module.exports = (robot) ->
             .value()
 
           send """Found #{additionalActivites.length} additional activites
-               from <i>#{additionalAthletes}</i>
+               from _#{additionalAthletes}_
                check them out at
-               <a href='http://www.strava.com/clubs/#{strava_club_id}/recent_activity'>
-               the club page</a>"""
+               <http://www.strava.com/clubs/#{strava_club_id}/recent_activity|the club page>"""
       .catch (reason) ->
         robot.logger.error "Faliled to handle new activity", reason.stack
 
   robot.on STRAVA_EVT_NOTOKEN, (athleteId, activityId) ->
     message = "Athlete hasn't authorized me to show more details :( " +
-              "Tell hen to click <a href='#{auth.authorizeUrl(activityId)}'>" +
-              "this link</a>"
+              "Tell hen to click <#{auth.authorizeUrl(activityId)}|this link>"
     sendDelayed message
 
   robot.on STRAVA_EVT_NEWTOKEN, (token, athlete) ->
     message = "Access token added for " +
-              "<b>#{athlete.firstname} #{athlete.lastname}</b>"
+              "*#{athlete.firstname} #{athlete.lastname}*"
     send message
 
 
@@ -208,6 +211,42 @@ class Activity
       if reason instanceof NoTokenError
         @robot.emit(STRAVA_EVT_NOTOKEN, @athleteId, @activityId)
       @
+
+  formatSlack: ->
+    return 'N/A' unless @hasData()
+    message = ["New activity <#{@url()}|#{@data.name}>:   *#{@fullName()}*",
+              "_#{@_verb()}_",
+              "*#{@distance()}* km in #{@duration()}",
+              "_(#{@_velocityString()}, #{@elevationGain()} m, #{@avgHeartrate()} bpm)_",
+              "near #{@data.location_city}"].join(" ")
+    message
+
+    # content =
+    #   mrkdwn_in: ['text']
+    #   fallback: 'No strava fallback'
+    #   text: """
+    #           New activity <#{@url()}|#{@data.name}>:
+    #           *#{@fullName()}*
+    #           _#{@_verb()}_
+    #           *#{@distance()}* km in #{@duration()}
+    #           _(#{@_velocityString()}, #{@elevationGain()} m, #{@avgHeartrate()} bpm)_
+    #           near #{@data.location_city}
+    #           """
+    # content.fields = @formatStreamsSlack() if @hasStreams()
+    message
+
+  formatStreamsSlack: ->
+    # TODO
+    # colNames = ['Stream', 'Mean', 'Stddev', 'Min', 'Q1', 'Median', 'Q3', 'Max']
+
+    # _.chain(@streams)
+    #   .reject(type: "distance")
+    #   .map (stream) =>
+    #     [streamName, stats...] = @_streamStats(stream)
+    #     cols = _.map stats, (stat) -> sprintf('%7-s', stat)
+    #     sprintf('%14-s%s', streamName, cols.join(' / '))
+    #   .join("\n")
+    #   .value()
 
   formatHTML: ->
     return 'N/A' unless @hasData()
@@ -501,12 +540,11 @@ class APIv3
 # Assume monotonically increasing strava activity ids
 class StravaClubPoller
 
-  constructor: (clubId, accessToken, room, robot, hipchat) ->
+  constructor: (clubId, accessToken, room, robot) ->
     @clubId      = clubId
     @accessToken = accessToken
     @room        = room
     @robot       = robot
-    @hipchat     = hipchat
     @buildClient()
 
   poll: ->

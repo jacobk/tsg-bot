@@ -24,11 +24,12 @@ _ = require "lodash"
 
 LastFm = require('../lib/lastfm')
 Spotify = require('../lib/spotify')
-Hipchat = require('../lib/hipchat')
+# Hipchat = require('../lib/hipchat')
+Slack = require('../lib/slack')
 
 lastfm_key    = process.env.LAST_FM_KEY
 lastfm_groups = process.env.LAST_FM_GROUPS || "tsg"
-hipchat_key = process.env.HIPCHAT_API_KEY
+# hipchat_key = process.env.HIPCHAT_API_KEY
 soundcloud_client_id = process.env.SOUNDCLOUD_CLIENT_ID
 spotify_playlist_user = process.env.SPOTIFY_PLAYLIST_USER
 spotify_playlist_id = process.env.SPOTIFY_PLAYLIST_ID
@@ -36,25 +37,25 @@ spotify_client_id = process.env.SPOTIFY_CLIENT_ID
 spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET
 spotify_refresh_token = process.env.SPOTIFY_REFRESH_TOKEN
 
-format = 'html'
+format = 'slack'
 
 module.exports = (robot) ->
 
   last_fm = new LastFm(lastfm_key, lastfm_groups, robot)
   spotify = new Spotify(spotify_client_id, spotify_client_secret, spotify_refresh_token);
-  hipchat = new Hipchat(robot, hipchat_key)
+  chatService = new Slack(robot)
 
-  hc_params = (from, message) ->
-    from: from
-    message: message
-    format: format
-    color: "gray"
+  # hc_params = (from, message) ->
+  #   from: from
+  #   message: message
+  #   format: format
+  #   color: "gray"
 
   show_listeners = (msg, type, data) ->
     def = deferred()
     last_fm.getPlayCounts(type, data, format).then (listeners) ->
       if listeners.listeners
-        hipchat.postMessage hc_params('last.fm', listeners.formatted), msg
+        chatService.postMessage chatService.params('last.fm', listeners.formatted), msg
       def.resolve listeners
     def.promise
 
@@ -67,7 +68,7 @@ module.exports = (robot) ->
         message = res.formatted
         # spotify.addToPlaylist(spotify_playlist_user, spotify_playlist_id,
         #   res.data.uri);
-      hipchat.postMessage hc_params('Spotify', message), msg
+      chatService.postMessage chatService.params('Spotify', message), msg
       def.resolve listeners
     def.promise
 
@@ -75,7 +76,7 @@ module.exports = (robot) ->
     def = deferred()
     last_fm.getTopTags(type, data, format).then (res) ->
       message = "Tags: <i>#{res[0..5].join(", ")}</i>"
-      hipchat.postMessage hc_params('last.fm', message), msg
+      chatService.postMessage chatService.params('last.fm', message), msg
       def.resolve true
     def.promise
 
@@ -96,7 +97,7 @@ module.exports = (robot) ->
     if /^links:/i.test msg.message.text
       return
     spotify.lookup(type, id, format).then (res) ->
-      hipchat.postMessage hc_params('Spotify', res.formatted), msg
+      chatService.postMessage chatService.params('Spotify', res.formatted), msg
       if type is "track"
         show_spotify_info msg, res.data
       show_listeners msg, type, res.data
@@ -122,7 +123,7 @@ module.exports = (robot) ->
                 artist = data.user.username
 
               message = "Track: <b>#{artist} - #{track}</b>"
-              hipchat.postMessage hc_params('Soundcloud', message), msg
+              chatService.postMessage chatService.params('Soundcloud', message), msg
               show_listeners msg, "track", spotifake(artist, track), format
 
   robot.respond /(spotify )?playlist/i, (msg) ->
@@ -157,7 +158,7 @@ module.exports = (robot) ->
         track  = scrobble.last.track
         since  = moment.unix(scrobble.last.ts).fromNow()
         message = "#{alias} listened to <b>#{artist} - #{track}</b> <i>(#{since})</i>"
-        hipchat.postMessage hc_params('last.fm', message), msg
+        chatService.postMessage chatService.params('last.fm', message), msg
         show_spotify_info msg, spotifake(artist, track)
         # show_lastfm_info msg, "track", spotifake(artist, track), format
         show_listeners msg, "track", spotifake(artist, track), format
@@ -170,13 +171,13 @@ module.exports = (robot) ->
           artist = scrobble.np.artist
           track  = scrobble.np.track
           message = "Track: <b>#{artist} - #{track}</b>"
-          hipchat.postMessage hc_params('last.fm', message), msg
+          chatService.postMessage chatService.params('last.fm', message), msg
           show_spotify_info msg, spotifake(artist, track)
           # show_lastfm_info msg, "track", spotifake(artist, track), format
           show_listeners msg, "track", spotifake(artist, track), format
         else
           message = "<i>#{alias} enjoys the silence...</i>"
-          hipchat.postMessage hc_params("last.fm", message), msg
+          chatService.postMessage chatService.params("last.fm", message), msg
 
   robot.respond /lastfm np (\S+)/i, (msg) ->
     show_np msg
@@ -205,11 +206,11 @@ module.exports = (robot) ->
     if period is "now"
       last_fm.getGroupRecentTracks(nbrOfTracks, groupByArtist).then (topTracks) ->
         saveTopTracks(topTracks)
-        hipchat.postMessage hc_params('last.fm', formatter(topTracks)), msg
+        chatService.postMessage chatService.params('last.fm', formatter(topTracks)), msg
     else
       last_fm.getTopTracks(nbrOfTracks, period, groupByArtist).then (topTracks) ->
         saveTopTracks(topTracks)
-        hipchat.postMessage hc_params('last.fm', formatter(topTracks)), msg
+        chatService.postMessage chatService.params('last.fm', formatter(topTracks)), msg
 
   robot.respond /lastfm who\s?(?:is)? #?(\d+)/i, (msg) ->
     tracks = robot.brain.data.lastTopTracks
