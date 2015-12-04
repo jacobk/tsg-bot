@@ -13,6 +13,7 @@ class LastFm
     @getGroupMembers groups.split(/\s*,\s*/), (members) =>
       @users = members
     @formats.html.listeners.bind(@)
+    @formats.slack.listeners.bind(@)
 
   getPlayCounts: (type, data, format) ->
     def = deferred()
@@ -253,6 +254,10 @@ class LastFm
     html:
       listeners: (data) ->
         pieces = ("#{user.user}<i>(#{user.count})</i>" for user in data)
+        "Listeners: #{pieces.join(", ")}"
+    slack:
+      listeners: (data) ->
+        pieces = ("#{user.user} _(#{user.count})_" for user in data)
         "Listeners: #{pieces.join(", ")}"
 
 module.exports = LastFm
