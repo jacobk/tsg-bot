@@ -30,7 +30,7 @@
     "rsvp": "~3.0.9",
     "scoped-http-client": "0.9.8",
     "simple-statistics": "~0.8.1",
-    "spotify-web-api-node": "0.0.7",
+    "spotify-web-api-node": "^2.4.0",
     "sprintf-js": "0.0.7",
     "underscore": "~1.4.3",
     "urlencode": "0.2.0"
